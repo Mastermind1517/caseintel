@@ -1,0 +1,61 @@
+import { API_BASE_URL } from "@/config/api";
+
+const fallbackAuditLogs = [
+  {
+    id: "LOG-001",
+    timestamp: "15 Aug 2026, 10:42 AM",
+    user: "Investigator",
+    role: "Investigator",
+    action: "Case Created",
+    target: "CASE-001",
+    result: "Success",
+  },
+  {
+    id: "LOG-002",
+    timestamp: "15 Aug 2026, 10:51 AM",
+    user: "Investigator",
+    role: "Investigator",
+    action: "Document Uploaded",
+    target: "FIR.pdf",
+    result: "Success",
+  },
+  {
+    id: "LOG-003",
+    timestamp: "15 Aug 2026, 10:53 AM",
+    user: "AI System",
+    role: "System",
+    action: "OCR + Entity Extraction",
+    target: "FIR.pdf",
+    result: "Success",
+  },
+  {
+    id: "LOG-004",
+    timestamp: "15 Aug 2026, 11:02 AM",
+    user: "AI System",
+    role: "System",
+    action: "Inconsistency Detected",
+    target: "ISSUE-001",
+    result: "Flagged",
+  },
+  {
+    id: "LOG-005",
+    timestamp: "15 Aug 2026, 11:15 AM",
+    user: "Reviewer",
+    role: "Reviewer",
+    action: "Human Verification",
+    target: "ISSUE-001",
+    result: "Source A Confirmed",
+  },
+];
+
+export async function getAuditLogs() {
+  try {
+    const res = await fetch(`${API_BASE_URL}/audit`, { cache: 'no-store' });
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch (e) {
+    console.warn("Failed to fetch audit logs from API, using fallback data:", e);
+  }
+  return fallbackAuditLogs;
+}
