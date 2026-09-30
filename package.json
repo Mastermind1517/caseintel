@@ -1,0 +1,13 @@
+{
+  "name": "caseintel-fullstack",
+  "version": "1.0.0",
+  "description": "CASEINTEL - Secure Legal DMS with Indic AI & Case Intelligence",
+  "scripts": {
+    "dev": "./start.sh",
+    "start": "./start.sh",
+    "ai": "cd AI && ./.venv/bin/python -m uvicorn api:app --host 127.0.0.1 --port 8000 --reload",
+    "backend": "cd BACKEND/node-service && node server.js",
+    "frontend": "cd FRONTEND && npm run dev",
+    "build:frontend": "cd FRONTEND && npm run build"
+  }
+}

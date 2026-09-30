@@ -1,0 +1,330 @@
+{
+  "cases": [
+    {
+      "id": "CASE-001",
+      "name": "Document Fraud Investigation",
+      "department": "Cyber Crime",
+      "priority": "High",
+      "status": "Active",
+      "officer": "Investigator",
+      "createdAt": "2026-08-10T10:00:00Z"
+    },
+    {
+      "id": "CASE-002",
+      "name": "Identity Verification",
+      "department": "Investigation",
+      "priority": "Medium",
+      "status": "Review",
+      "officer": "Reviewer",
+      "createdAt": "2026-08-12T14:30:00Z"
+    },
+    {
+      "id": "CASE-003",
+      "name": "Financial Document Analysis",
+      "department": "Economic Offences",
+      "priority": "Low",
+      "status": "Closed",
+      "officer": "Investigator",
+      "createdAt": "2026-08-14T09:15:00Z"
+    }
+  ],
+  "documents": [
+    {
+      "id": "DOC-001",
+      "name": "FIR.pdf",
+      "type": "FIR",
+      "caseId": "CASE-001",
+      "status": "Processed",
+      "confidence": 96,
+      "uploadedAt": "2026-08-15T10:51:00Z",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "DOC-002",
+      "name": "Investigation_Report.pdf",
+      "type": "Investigation Report",
+      "caseId": "CASE-001",
+      "status": "Processed",
+      "confidence": 91,
+      "uploadedAt": "2026-08-15T11:00:00Z",
+      "sha256": "a4b5c67890def123456789abcdef123456789abcdef123456789abcdef123456"
+    },
+    {
+      "id": "DOC-003",
+      "name": "Forensic_Report.pdf",
+      "type": "Forensic Report",
+      "caseId": "CASE-001",
+      "status": "Processing",
+      "confidence": null,
+      "uploadedAt": "2026-08-15T11:20:00Z",
+      "sha256": "b5c6d7e8f90123456789abcdef123456789abcdef123456789abcdef12345678"
+    }
+  ],
+  "aiAnalysis": {
+    "DOC-001": {
+      "documentId": "DOC-001",
+      "processingStatus": "complete",
+      "processingStages": [
+        {
+          "name": "Document uploaded",
+          "status": "complete"
+        },
+        {
+          "name": "Document classified",
+          "status": "complete"
+        },
+        {
+          "name": "OCR processing",
+          "status": "complete"
+        },
+        {
+          "name": "Entity extraction",
+          "status": "complete"
+        },
+        {
+          "name": "Inconsistency check",
+          "status": "complete"
+        }
+      ],
+      "documentType": "FIR",
+      "language": "English",
+      "ocrConfidence": 96,
+      "summary": "The document records an incident in Siliguri involving Rahul Sharma on 12 August 2026.",
+      "extractedText": "FIRST INFORMATION REPORT\nCase Number: CASE-001\nIncident Date: 12 August 2026\nLocation: Siliguri\nPerson: Rahul Sharma\nThe incident was reported and recorded for further investigation.",
+      "translation": "FIRST INFORMATION REPORT\nCase Number: CASE-001\nIncident Date: 12 August 2026\nLocation: Siliguri\nPerson: Rahul Sharma\nThe incident was reported and recorded for further investigation.",
+      "entities": {
+        "people": [
+          "Rahul Sharma"
+        ],
+        "locations": [
+          "Siliguri"
+        ],
+        "dates": [
+          "12 August 2026"
+        ],
+        "organizations": [
+          "Cyber Crime"
+        ]
+      },
+      "issues": []
+    },
+    "DOC-002": {
+      "documentId": "DOC-002",
+      "processingStatus": "complete",
+      "processingStages": [
+        {
+          "name": "Document uploaded",
+          "status": "complete"
+        },
+        {
+          "name": "Document classified",
+          "status": "complete"
+        },
+        {
+          "name": "OCR processing",
+          "status": "complete"
+        },
+        {
+          "name": "Entity extraction",
+          "status": "complete"
+        },
+        {
+          "name": "Inconsistency check",
+          "status": "complete"
+        }
+      ],
+      "documentType": "Investigation Report",
+      "language": "English",
+      "ocrConfidence": 91,
+      "summary": "Investigation Report for CASE-001 recording statements and incident date on 14 August 2026 in Siliguri.",
+      "extractedText": "INVESTIGATION REPORT\nCase: CASE-001\nDate of event observed: 14 August 2026\nInvestigating Officer visited Siliguri.\nSubject: Rahul Sharma.",
+      "translation": "INVESTIGATION REPORT\nCase: CASE-001\nDate of event observed: 14 August 2026\nInvestigating Officer visited Siliguri.\nSubject: Rahul Sharma.",
+      "entities": {
+        "people": [
+          "Rahul Sharma"
+        ],
+        "locations": [
+          "Siliguri"
+        ],
+        "dates": [
+          "14 August 2026"
+        ],
+        "organizations": []
+      },
+      "issues": [
+        "Date mismatch with FIR.pdf (12 August vs 14 August)"
+      ]
+    }
+  },
+  "verificationIssues": [
+    {
+      "id": "ISSUE-001",
+      "caseId": "CASE-001",
+      "type": "Date Mismatch",
+      "severity": "high",
+      "status": "pending",
+      "description": "The incident date differs between the FIR and Investigation Report.",
+      "sourceA": {
+        "documentId": "DOC-001",
+        "documentName": "FIR.pdf",
+        "field": "Incident Date",
+        "value": "12 August 2026"
+      },
+      "sourceB": {
+        "documentId": "DOC-002",
+        "documentName": "Investigation_Report.pdf",
+        "field": "Incident Date",
+        "value": "14 August 2026"
+      },
+      "confidence": 94,
+      "createdAt": "2026-08-15T10:30:00"
+    }
+  ],
+  "timeline": [
+    {
+      "id": "EVENT-004",
+      "date": "15 August 2026",
+      "title": "Inconsistency detected",
+      "description": "AI detected a mismatch in the incident date between FIR.pdf and Investigation_Report.pdf.",
+      "type": "AI Alert",
+      "caseId": "CASE-001"
+    },
+    {
+      "id": "EVENT-003",
+      "date": "14 August 2026",
+      "title": "Investigation Report uploaded",
+      "description": "Investigation_Report.pdf was added to CASE-001.",
+      "type": "Document",
+      "caseId": "CASE-001"
+    },
+    {
+      "id": "EVENT-002",
+      "date": "12 August 2026",
+      "title": "Incident recorded",
+      "description": "Incident information was recorded in the FIR.",
+      "type": "Incident",
+      "caseId": "CASE-001"
+    },
+    {
+      "id": "EVENT-001",
+      "date": "10 August 2026",
+      "title": "Case created",
+      "description": "CASE-001 was created and assigned for investigation.",
+      "type": "Case",
+      "caseId": "CASE-001"
+    }
+  ],
+  "connections": {
+    "nodes": [
+      {
+        "id": "case-001",
+        "label": "CASE-001",
+        "type": "Case"
+      },
+      {
+        "id": "doc-001",
+        "label": "FIR.pdf",
+        "type": "Document"
+      },
+      {
+        "id": "doc-002",
+        "label": "Investigation Report",
+        "type": "Document"
+      },
+      {
+        "id": "person-001",
+        "label": "Rahul Sharma",
+        "type": "Person"
+      },
+      {
+        "id": "location-001",
+        "label": "Siliguri",
+        "type": "Location"
+      },
+      {
+        "id": "date-001",
+        "label": "12 August 2026",
+        "type": "Date"
+      }
+    ],
+    "edges": [
+      {
+        "from": "case-001",
+        "to": "doc-001",
+        "label": "contains"
+      },
+      {
+        "from": "case-001",
+        "to": "doc-002",
+        "label": "contains"
+      },
+      {
+        "from": "doc-001",
+        "to": "person-001",
+        "label": "mentions"
+      },
+      {
+        "from": "doc-002",
+        "to": "person-001",
+        "label": "mentions"
+      },
+      {
+        "from": "doc-001",
+        "to": "location-001",
+        "label": "location"
+      },
+      {
+        "from": "doc-001",
+        "to": "date-001",
+        "label": "date"
+      }
+    ]
+  },
+  "auditLogs": [
+    {
+      "id": "LOG-001",
+      "timestamp": "15 Aug 2026, 10:42 AM",
+      "user": "Investigator",
+      "role": "Investigator",
+      "action": "Case Created",
+      "target": "CASE-001",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-002",
+      "timestamp": "15 Aug 2026, 10:51 AM",
+      "user": "Investigator",
+      "role": "Investigator",
+      "action": "Document Uploaded",
+      "target": "FIR.pdf",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-003",
+      "timestamp": "15 Aug 2026, 10:53 AM",
+      "user": "AI System",
+      "role": "System",
+      "action": "OCR + Entity Extraction",
+      "target": "FIR.pdf",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-004",
+      "timestamp": "15 Aug 2026, 11:02 AM",
+      "user": "AI System",
+      "role": "System",
+      "action": "Inconsistency Detected",
+      "target": "ISSUE-001",
+      "result": "Flagged"
+    },
+    {
+      "id": "LOG-005",
+      "timestamp": "15 Aug 2026, 11:15 AM",
+      "user": "Reviewer",
+      "role": "Reviewer",
+      "action": "Human Verification",
+      "target": "ISSUE-001",
+      "result": "Source A Confirmed"
+    }
+  ]
+}

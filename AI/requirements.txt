@@ -1,0 +1,28 @@
+streamlit==1.38.0
+opencv-python-headless==4.10.0.84
+numpy==1.26.4
+Pillow==10.4.0
+pdf2image==1.17.0
+
+# OCR
+paddlepaddle==2.6.2
+paddleocr==2.8.1
+pytesseract==0.3.13
+# ^ Required for Bengali (PaddleOCR doesn't support it) and as a manual
+#   fallback elsewhere. This was imported by ocr_engine.py in the original
+#   version but never actually listed here, so `pip install -r
+#   requirements.txt` alone could not have made the Bengali path work.
+
+# Translation (Google backends)
+googletrans==4.0.0rc1
+deep-translator==1.11.4
+# ^ Automatic fallback used when googletrans breaks (see translate.py).
+#   Independently maintained wrapper around the same Google Translate
+#   endpoint -- not a magic fix if Google itself is unreachable, but a real
+#   second path for the specific "googletrans's scraping trick broke" failure.
+
+# Translation (IndicTrans2 via HuggingFace) -- optional, heavier
+torch>=2.2.0
+transformers==4.44.2
+sentencepiece==0.2.0
+sacremoses==0.1.1
