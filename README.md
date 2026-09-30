@@ -176,3 +176,4 @@ NEXT_PUBLIC_AI_URL=http://localhost:8000
    curl http://localhost:8000/languages
    ```
 # caseintel
+# caseintel
