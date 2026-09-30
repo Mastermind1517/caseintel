@@ -1,0 +1,27 @@
+services:
+  # 1. AI Document Intelligence Microservice
+  - type: web
+    name: caseintel-ai
+    env: python
+    rootDir: AI
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn api:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+
+  # 2. Backend Storage & REST API Gateway
+  - type: web
+    name: caseintel-backend
+    env: node
+    rootDir: BACKEND/node-service
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: AI_SERVICE_URL
+        fromService:
+          type: web
+          name: caseintel-ai
+          property: host
