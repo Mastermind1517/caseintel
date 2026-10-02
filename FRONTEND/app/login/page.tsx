@@ -17,21 +17,70 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const res = await fetch(`${API_BASE_URL}/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: idValue, password: pwValue }),
-      });
+      let loggedIn = false;
 
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || "Authentication failed.");
+      // 1. Attempt authentication with the live CaseIntel backend
+      try {
+        const res = await fetch(`${API_BASE_URL}/auth/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username: idValue.trim(), password: pwValue }),
+        });
+
+        const contentType = res.headers.get("content-type") || "";
+        if (contentType.includes("application/json")) {
+          const data = await res.json();
+          if (res.ok && data.success) {
+            if (typeof window !== "undefined") {
+              localStorage.setItem("caseintel_token", data.token);
+              localStorage.setItem("caseintel_user", JSON.stringify(data.user));
+            }
+            loggedIn = true;
+          } else if (data.error) {
+            throw new Error(data.error);
+          }
+        }
+      } catch (backendErr: any) {
+        if (backendErr.message && backendErr.message.toLowerCase().includes("invalid credentials")) {
+          throw backendErr;
+        }
+        console.warn("Backend API unreachable or returned non-JSON, checking demo fallback:", backendErr);
       }
 
-      // Store token and user
-      if (typeof window !== "undefined") {
-        localStorage.setItem("caseintel_token", data.token);
-        localStorage.setItem("caseintel_user", JSON.stringify(data.user));
+      // 2. Demo fallback authentication (for hosted frontend previews on Vercel)
+      if (!loggedIn) {
+        const cleanId = idValue.trim().toLowerCase();
+        if (cleanId === "investigator" && (pwValue === "Investigator123!" || pwValue === "investigator")) {
+          const demoUser = {
+            id: "usr-inv-001",
+            username: "investigator",
+            email: "investigator@caseintel.local",
+            name: "Inspector Rajesh Verma",
+            role: "INVESTIGATOR",
+            department: "Cyber Crime",
+          };
+          if (typeof window !== "undefined") {
+            localStorage.setItem("caseintel_token", "demo-jwt-investigator-offline");
+            localStorage.setItem("caseintel_user", JSON.stringify(demoUser));
+          }
+          loggedIn = true;
+        } else if (cleanId === "admin" && (pwValue === "Admin123!" || pwValue === "admin")) {
+          const demoUser = {
+            id: "usr-adm-001",
+            username: "admin",
+            email: "admin@caseintel.local",
+            name: "Director Sharma",
+            role: "ADMIN",
+            department: "Special Operations",
+          };
+          if (typeof window !== "undefined") {
+            localStorage.setItem("caseintel_token", "demo-jwt-admin-offline");
+            localStorage.setItem("caseintel_user", JSON.stringify(demoUser));
+          }
+          loggedIn = true;
+        } else {
+          throw new Error("Invalid credentials. Please enter 'investigator' / 'Investigator123!' or 'admin' / 'Admin123!'.");
+        }
       }
 
       router.push("/");
