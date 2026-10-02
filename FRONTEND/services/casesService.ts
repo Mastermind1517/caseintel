@@ -1,5 +1,15 @@
 import { API_BASE_URL } from "@/config/api";
 
+function getAuthHeaders(): HeadersInit {
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem("caseintel_token");
+    if (token) {
+      return { Authorization: `Bearer ${token}` };
+    }
+  }
+  return {};
+}
+
 const fallbackCases = [
   {
     id: "CASE-001",
@@ -29,7 +39,10 @@ const fallbackCases = [
 
 export async function getCases() {
   try {
-    const res = await fetch(`${API_BASE_URL}/cases`, { cache: 'no-store' });
+    const res = await fetch(`${API_BASE_URL}/cases`, {
+      headers: getAuthHeaders(),
+      cache: 'no-store',
+    });
     if (res.ok) {
       return await res.json();
     }
@@ -41,7 +54,10 @@ export async function getCases() {
 
 export async function getCaseById(caseId: string) {
   try {
-    const res = await fetch(`${API_BASE_URL}/cases/${caseId}`, { cache: 'no-store' });
+    const res = await fetch(`${API_BASE_URL}/cases/${caseId}`, {
+      headers: getAuthHeaders(),
+      cache: 'no-store',
+    });
     if (res.ok) {
       return await res.json();
     }
@@ -57,6 +73,7 @@ export async function createCase(data: { name: string; department?: string; prio
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        ...getAuthHeaders(),
       },
       body: JSON.stringify(data),
     });

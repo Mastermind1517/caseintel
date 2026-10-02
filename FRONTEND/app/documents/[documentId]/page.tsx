@@ -21,6 +21,7 @@ import {
 
 import { getAIAnalysis } from "@/services/aiService";
 import { getDocumentById, getDocumentDownloadUrl } from "@/services/documentsService";
+import { API_BASE_URL } from "@/config/api";
 
 export default function DocumentViewer() {
   const params = useParams();
@@ -30,6 +31,24 @@ export default function DocumentViewer() {
   const [aiAnalysis, setAiAnalysis] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<"text" | "translation" | "preview">("translation");
   const [loading, setLoading] = useState(true);
+  const [verifying, setVerifying] = useState(false);
+  const [integrityResult, setIntegrityResult] = useState<any>(null);
+
+  const handleVerifyIntegrity = async () => {
+    setVerifying(true);
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('caseintel_token') : null;
+      const res = await fetch(`${API_BASE_URL}/documents/${documentId}/verify-integrity`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      const data = await res.json();
+      setIntegrityResult(data);
+    } catch (err: any) {
+      setIntegrityResult({ success: false, error: err.message });
+    } finally {
+      setVerifying(false);
+    }
+  };
 
   useEffect(() => {
     async function loadData() {
@@ -250,6 +269,70 @@ export default function DocumentViewer() {
 
         {/* Right: AI Intelligence Panel */}
         <section className="lg:col-span-5 space-y-6">
+          {/* Cryptographic Chain of Custody & Vault Verification Card */}
+          <div className="bg-white border rounded-xl p-6 shadow-xs space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-emerald-50 text-emerald-700 rounded-lg">
+                  <Lock size={18} />
+                </div>
+                <div>
+                  <h2 className="font-bold text-sm text-gray-900">Chain of Custody Integrity</h2>
+                  <p className="text-[11px] text-gray-500">AES-256 Envelope Vault & SHA-256 Checksum</p>
+                </div>
+              </div>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 uppercase">
+                Vault Protected
+              </span>
+            </div>
+
+            <div className="space-y-1">
+              <span className="text-[10px] uppercase font-semibold text-gray-400">Stored Document Checksum (SHA-256)</span>
+              <p className="font-mono text-xs break-all bg-gray-50 p-2.5 rounded-lg border text-gray-800 select-all">
+                {doc?.sha256 || "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"}
+              </p>
+            </div>
+
+            <button
+              onClick={handleVerifyIntegrity}
+              disabled={verifying}
+              className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold py-2.5 px-3 rounded-lg transition cursor-pointer shadow-xs disabled:opacity-50"
+            >
+              {verifying ? "Decrypting Vault Stream & Re-computing SHA-256..." : "Verify Vault Cryptographic Integrity"}
+            </button>
+
+            {integrityResult && (
+              <div
+                className={`p-3.5 rounded-xl text-xs border ${
+                  integrityResult.integrityValid
+                    ? "bg-emerald-50 border-emerald-200 text-emerald-900"
+                    : "bg-red-50 border-red-200 text-red-900"
+                }`}
+              >
+                {integrityResult.integrityValid ? (
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-1.5 font-bold text-emerald-800">
+                      <CheckCircle2 size={16} className="text-emerald-600" />
+                      <span>Cryptographic Integrity Verified: 100% Match</span>
+                    </div>
+                    <p className="text-[11px] text-emerald-700 leading-relaxed">
+                      In-memory decrypted vault stream checksum matches stored hash exactly. Verified at{" "}
+                      {new Date(integrityResult.verifiedAt).toLocaleTimeString()}.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-1 text-red-800">
+                    <div className="flex items-center gap-1.5 font-bold">
+                      <AlertTriangle size={16} className="text-red-600" />
+                      <span>Integrity Failure Detected</span>
+                    </div>
+                    <p className="text-[11px]">{integrityResult.error || "Calculated hash did not match stored hash."}</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
           {/* AI Metrics Card */}
           <div className="bg-white border rounded-xl p-6 shadow-xs space-y-5">
             <div className="flex items-center gap-2.5 pb-4 border-b">

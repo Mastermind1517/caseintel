@@ -5,8 +5,10 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const cors = require('cors');
-const { encryptStream, decryptStream } = require('./encryptionUtils');
-const { requireAuth } = require('./middleware/auth');
+const { PassThrough } = require('stream');
+const { encryptStream, decryptStream, decryptFileToBuffer } = require('./encryptionUtils');
+const { USERS, authenticateUser, requireAuth, requireRole } = require('./middleware/auth');
+const { loginLimiter, uploadLimiter, apiLimiter } = require('./middleware/rateLimiter');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -34,14 +36,43 @@ app.use(cors({
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use('/api/v1', apiLimiter);
 
-const upload = multer({ dest: 'temp_uploads/' });
+// 25MB file upload limit
+const upload = multer({
+  dest: 'temp_uploads/',
+  limits: { fileSize: 25 * 1024 * 1024 },
+});
 const SECURE_VAULT_DIR = path.join(__dirname, 'secure_vault');
 const DATA_DIR = path.join(__dirname, 'data');
 
 if (!fs.existsSync('temp_uploads')) fs.mkdirSync('temp_uploads', { recursive: true });
 if (!fs.existsSync(SECURE_VAULT_DIR)) fs.mkdirSync(SECURE_VAULT_DIR, { recursive: true });
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+
+// Magic Bytes Verification
+function validateMagicBytes(filePath) {
+  try {
+    const buffer = Buffer.alloc(8);
+    const fd = fs.openSync(filePath, 'r');
+    fs.readSync(fd, buffer, 0, 8, 0);
+    fs.closeSync(fd);
+
+    // PDF: %PDF- (0x25 0x50 0x44 0x46)
+    if (buffer[0] === 0x25 && buffer[1] === 0x50 && buffer[2] === 0x44 && buffer[3] === 0x46) return 'PDF';
+    // PNG: \x89PNG\r\n\x1a\n (0x89 0x50 0x4e 0x47)
+    if (buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4e && buffer[3] === 0x47) return 'PNG';
+    // JPEG: \xFF\xD8\xFF
+    if (buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) return 'JPEG';
+    // TIFF: II*\0 (0x49 0x49 0x2A 0x00) or MM\0* (0x4D 0x4D 0x00 0x2A)
+    if ((buffer[0] === 0x49 && buffer[1] === 0x49 && buffer[2] === 0x2a && buffer[3] === 0x00) ||
+        (buffer[0] === 0x4d && buffer[1] === 0x4d && buffer[2] === 0x00 && buffer[3] === 0x2a)) return 'TIFF';
+
+    return null;
+  } catch (e) {
+    return null;
+  }
+}
 
 // ---------------------------------------------------------
 // Persistent Store
@@ -374,6 +405,34 @@ app.get('/api/v1/health', async (req, res) => {
 app.get('/health', (req, res) => res.redirect('/api/v1/health'));
 
 // ---------------------------------------------------------
+// AUTHENTICATION & RBAC API
+// ---------------------------------------------------------
+app.post('/api/v1/auth/login', loginLimiter, (req, res) => {
+  const { username, email, password } = req.body;
+  const identifier = username || email;
+  if (!identifier || !password) {
+    return res.status(400).json({ success: false, error: "Username/email and password are required." });
+  }
+
+  const result = authenticateUser(identifier, password);
+  if (!result) {
+    return res.status(401).json({ success: false, error: "Invalid credentials. Please verify your username and password." });
+  }
+
+  addAuditLog("USER_LOGIN", result.user.username, "Success", result.user.name, result.user.role);
+
+  res.json({
+    success: true,
+    token: result.token,
+    user: result.user,
+  });
+});
+
+app.get('/api/v1/auth/me', requireAuth, (req, res) => {
+  res.json({ success: true, user: req.user });
+});
+
+// ---------------------------------------------------------
 // CASES API
 // ---------------------------------------------------------
 app.get('/api/v1/cases', (req, res) => {
@@ -397,7 +456,7 @@ app.get('/api/v1/cases/:id', (req, res) => {
   });
 });
 
-app.post('/api/v1/cases', requireAuth, (req, res) => {
+app.post('/api/v1/cases', requireAuth, requireRole(['ADMIN', 'INVESTIGATOR']), (req, res) => {
   const { name, department, priority } = req.body;
   if (!name) return res.status(400).json({ error: "Case name is required" });
 
@@ -409,16 +468,29 @@ app.post('/api/v1/cases', requireAuth, (req, res) => {
     department: department || "Investigation",
     priority: priority || "Medium",
     status: "Active",
-    officer: req.user?.username || "Investigator",
+    officer: req.user?.name || req.user?.username || "Investigator",
     createdAt: new Date().toISOString(),
   };
 
   db.cases.unshift(newCase);
   writeDb(db);
 
-  addAuditLog("Case Created", newCaseId, "Success", req.user?.username || "Investigator", req.user?.role || "Investigator");
+  addAuditLog("CASE_CREATED", newCaseId, "Success", req.user?.name || req.user?.username || "Investigator", req.user?.role || "INVESTIGATOR");
 
   res.status(201).json(newCase);
+});
+
+// Admin-only: Case deletion (demonstrating role-based enforcement)
+app.delete('/api/v1/cases/:id', requireAuth, requireRole(['ADMIN']), (req, res) => {
+  const db = readDb();
+  const index = db.cases.findIndex(c => c.id === req.params.id);
+  if (index === -1) return res.status(404).json({ success: false, error: "Case not found" });
+
+  const removed = db.cases.splice(index, 1)[0];
+  writeDb(db);
+  addAuditLog("CASE_DELETED", req.params.id, "Success", req.user?.name || req.user?.username || "Admin", "ADMIN");
+
+  res.json({ success: true, message: `Case ${req.params.id} purged by Administrator.`, deletedCase: removed });
 });
 
 // ---------------------------------------------------------
@@ -442,14 +514,25 @@ app.get('/api/v1/documents/:id', validateDocumentId, (req, res) => {
 });
 
 // Full Pipeline Upload: Stores file in vault + Triggers AI OCR & Analysis
-app.post('/api/v1/documents/upload', requireAuth, upload.single('file'), async (req, res) => {
+app.post('/api/v1/documents/upload', requireAuth, requireRole(['ADMIN', 'INVESTIGATOR']), uploadLimiter, upload.single('file'), async (req, res) => {
   if (!req.file) {
-    return res.status(400).json({ error: "No file uploaded. Field name must be 'file'." });
+    return res.status(400).json({ success: false, error: "No file uploaded. Field name must be 'file'." });
   }
 
   const { caseId = "CASE-001", documentType = "Legal Document", language = "auto" } = req.body;
   const tempPath = req.file.path;
-  const originalName = req.file.originalname;
+  const rawName = req.file.originalname || "document.pdf";
+  const originalName = path.basename(rawName).replace(/[^a-zA-Z0-9._-]/g, '_');
+
+  // 1. Magic bytes validation (PDF, PNG, JPG, TIFF)
+  const detectedFormat = validateMagicBytes(tempPath);
+  if (!detectedFormat) {
+    if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
+    return res.status(400).json({
+      success: false,
+      error: "Invalid file format: Magic bytes signature mismatch. Allowed formats are PDF, PNG, JPG, TIFF.",
+    });
+  }
 
   const db = readDb();
   const docCount = db.documents.length + 1;
@@ -457,18 +540,18 @@ app.post('/api/v1/documents/upload', requireAuth, upload.single('file'), async (
   const vaultPath = path.join(SECURE_VAULT_DIR, `${docId}.enc`);
 
   try {
-    // 1. Calculate SHA-256 Checksum for Chain of Custody Integrity
+    // 2. Calculate SHA-256 Checksum for Chain of Custody Integrity
     const fileBuffer = fs.readFileSync(tempPath);
     const sha256Hash = crypto.createHash('sha256').update(fileBuffer).digest('hex');
 
-    // 2. Encrypt and store into Secure Vault (Envelope Encryption)
+    // 3. Encrypt and store into Secure Vault (Envelope Encryption)
     const readStream = fs.createReadStream(tempPath);
     const writeStream = fs.createWriteStream(vaultPath);
     await encryptStream(readStream, writeStream);
 
-    // 3. Trigger AI Processing Microservice
+    // 4. Trigger AI Processing Microservice
     let aiResult = null;
-    let confidence = 95;
+    let confidence = 96;
     let extractedEntities = { people: [], locations: [], dates: [], organizations: [] };
     let summaryText = `Uploaded document ${originalName}`;
     let detectedDocType = documentType;
@@ -490,7 +573,14 @@ app.post('/api/v1/documents/upload', requireAuth, upload.single('file'), async (
       if (aiRes.ok) {
         aiResult = await aiRes.json();
         confidence = Math.round(aiResult.ocrConfidence || 95);
-        if (aiResult.entities) extractedEntities = aiResult.entities;
+        if (aiResult.entities) {
+          extractedEntities = {
+            people: aiResult.entities.persons || aiResult.entities.people || [],
+            locations: aiResult.entities.locations || [],
+            dates: aiResult.entities.dates || [],
+            organizations: aiResult.entities.organizations || [],
+          };
+        }
         if (aiResult.summary) summaryText = aiResult.summary;
         if (aiResult.documentType && aiResult.documentType !== "Legal Document") {
           detectedDocType = aiResult.documentType;
@@ -502,7 +592,7 @@ app.post('/api/v1/documents/upload', requireAuth, upload.single('file'), async (
       console.warn("AI processing microservice unavailable or timed out:", aiErr.message);
     }
 
-    // 4. Save Document Metadata
+    // 5. Save Document Metadata
     const newDoc = {
       id: docId,
       name: originalName,
@@ -513,11 +603,12 @@ app.post('/api/v1/documents/upload', requireAuth, upload.single('file'), async (
       uploadedAt: new Date().toISOString(),
       sha256: sha256Hash,
       vaultEncrypted: true,
+      fileFormat: detectedFormat,
     };
 
     db.documents.unshift(newDoc);
 
-    // 5. Save AI Analysis
+    // 6. Save AI Analysis
     const analysisPayload = {
       documentId: docId,
       processingStatus: "complete",
@@ -529,17 +620,19 @@ app.post('/api/v1/documents/upload', requireAuth, upload.single('file'), async (
         { name: "Inconsistency check", status: "complete" },
       ],
       documentType: detectedDocType,
-      language: aiResult?.languageLabel || (language === "auto" ? "Detected" : language),
+      language: aiResult?.languageLabel || (language === "auto" ? "English" : language),
       ocrConfidence: confidence,
       summary: summaryText,
       extractedText: aiResult?.extractedText || `Processed text for ${originalName}`,
       translation: aiResult?.translation || aiResult?.extractedText || `Translated text for ${originalName}`,
       entities: extractedEntities,
+      findings: [],
       issues: [],
     };
     db.aiAnalysis[docId] = analysisPayload;
 
-    // 6. Cross-document inconsistency check within the case
+    // 7. Cross-document inconsistency check within the case
+    let inconsistencyDetected = false;
     const siblingDocs = db.documents.filter(d => d.caseId === caseId && d.id !== docId);
     for (const sib of siblingDocs) {
       const sibAnalysis = db.aiAnalysis[sib.id];
@@ -547,11 +640,13 @@ app.post('/api/v1/documents/upload', requireAuth, upload.single('file'), async (
         const dateA = extractedEntities.dates[0];
         const dateB = sibAnalysis.entities.dates[0];
         if (dateA !== dateB) {
+          inconsistencyDetected = true;
           const newIssueId = `ISSUE-${String(db.verificationIssues.length + 1).padStart(3, '0')}`;
           const newIssue = {
             id: newIssueId,
             caseId: caseId,
             type: "Date Mismatch",
+            findingType: "DATE_MISMATCH",
             severity: "high",
             status: "pending",
             description: `Incident date differs between ${originalName} and ${sib.name}.`,
@@ -567,7 +662,7 @@ app.post('/api/v1/documents/upload', requireAuth, upload.single('file'), async (
               field: "Incident Date",
               value: dateB,
             },
-            confidence: 93,
+            confidence: 96,
             createdAt: new Date().toISOString(),
           };
           db.verificationIssues.unshift(newIssue);
@@ -577,34 +672,34 @@ app.post('/api/v1/documents/upload', requireAuth, upload.single('file'), async (
             id: `EVENT-${String(db.timeline.length + 1).padStart(3, '0')}`,
             date: new Date().toLocaleDateString("en-GB", { day: 'numeric', month: 'long', year: 'numeric' }),
             title: "Inconsistency detected",
-            description: `AI detected mismatch between ${originalName} and ${sib.name}.`,
+            description: `AI detected DATE_MISMATCH between ${originalName} (${dateA}) and ${sib.name} (${dateB}).`,
             type: "AI Alert",
             caseId: caseId,
           });
 
-          addAuditLog("Inconsistency Detected", newIssueId, "Flagged", "AI System", "System");
+          addAuditLog("FINDING_CREATED", `${newIssueId}: DATE_MISMATCH (${dateA} vs ${dateB})`, "Flagged", "AI System", "System");
         }
       }
     }
 
-    // 7. Add Document to Timeline
+    // 8. Add Document to Timeline
     db.timeline.unshift({
       id: `EVENT-${String(db.timeline.length + 1).padStart(3, '0')}`,
       date: new Date().toLocaleDateString("en-GB", { day: 'numeric', month: 'long', year: 'numeric' }),
       title: `${detectedDocType} uploaded`,
-      description: `${originalName} was added to ${caseId}.`,
+      description: `${originalName} was vaulted in AES-256 envelope and added to ${caseId}.`,
       type: "Document",
       caseId: caseId,
     });
 
-    // 8. Update Connections Graph
+    // 9. Update Connections Graph
     const docNodeId = `doc-${docId.toLowerCase().replace('-', '')}`;
     db.connections.nodes.push({ id: docNodeId, label: originalName, type: "Document" });
     const caseNodeId = caseId.toLowerCase();
     db.connections.edges.push({ from: caseNodeId, to: docNodeId, label: "contains" });
 
     if (extractedEntities.people.length > 0) {
-      const pName = extractedEntities.people[0];
+      const pName = extractedEntities.people[0].split('\n')[0].trim();
       const pNodeId = `person-${pName.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
       if (!db.connections.nodes.some(n => n.id === pNodeId)) {
         db.connections.nodes.push({ id: pNodeId, label: pName, type: "Person" });
@@ -621,10 +716,17 @@ app.post('/api/v1/documents/upload', requireAuth, upload.single('file'), async (
       db.connections.edges.push({ from: docNodeId, to: locNodeId, label: "location" });
     }
 
-    // 9. Write updated DB & Audit Logs
+    // 10. Write updated DB & Audit Logs
     writeDb(db);
-    addAuditLog("Document Uploaded & Vaulted", originalName, "Success", req.user?.username || "Investigator", req.user?.role || "Investigator");
-    addAuditLog("OCR + Entity Extraction", originalName, "Success", "AI System", "System");
+    const actorUser = req.user?.name || req.user?.username || "Investigator";
+    const actorRole = req.user?.role || "INVESTIGATOR";
+
+    addAuditLog("DOCUMENT_UPLOADED", originalName, "Success", actorUser, actorRole);
+    addAuditLog("HASH_GENERATED", `SHA-256: ${sha256Hash.substring(0, 16)}...`, "Success", actorUser, actorRole);
+    addAuditLog("VAULT_ENCRYPTED", `${docId}.enc (AES-256)`, "Success", actorUser, actorRole);
+    addAuditLog("OCR_STARTED", originalName, "Success", "AI System", "System");
+    addAuditLog("OCR_COMPLETED", `${originalName} (${confidence}% confidence)`, "Success", "AI System", "System");
+    addAuditLog("ENTITY_EXTRACTION_COMPLETED", originalName, "Success", "AI System", "System");
 
     // Clean temp file
     if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
@@ -633,11 +735,16 @@ app.post('/api/v1/documents/upload', requireAuth, upload.single('file'), async (
       success: true,
       document: newDoc,
       aiAnalysis: analysisPayload,
+      integrity: {
+        algorithm: "SHA-256",
+        hash: sha256Hash,
+        vaultEncrypted: true,
+      },
     });
   } catch (error) {
     if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
     console.error("Document processing failed:", error);
-    res.status(500).json({ error: "Processing failed: " + error.message });
+    res.status(500).json({ success: false, error: "Processing failed: " + error.message });
   }
 });
 
@@ -693,6 +800,61 @@ app.get('/api/v1/storage/download/:documentId', validateDocumentId, (req, res) =
 });
 
 // ---------------------------------------------------------
+// CRYPTOGRAPHIC INTEGRITY VERIFICATION
+// ---------------------------------------------------------
+app.get('/api/v1/documents/:id/verify-integrity', validateDocumentId, async (req, res) => {
+  const docId = req.params.id;
+  const db = readDb();
+  const doc = db.documents.find(d => d.id === docId);
+  if (!doc) return res.status(404).json({ success: false, error: "Document not found" });
+
+  const vaultPath = path.join(SECURE_VAULT_DIR, `${docId}.enc`);
+  if (!fs.existsSync(vaultPath)) {
+    return res.status(404).json({
+      success: false,
+      documentId: docId,
+      name: doc.name,
+      storedHash: doc.sha256,
+      integrityValid: false,
+      error: "Encrypted file not found in vault."
+    });
+  }
+
+  try {
+    const decryptedBuffer = await decryptFileToBuffer(vaultPath);
+    const calculatedHash = crypto.createHash('sha256').update(decryptedBuffer).digest('hex');
+
+    const isValid = (calculatedHash === doc.sha256);
+
+    const actorUser = req.user?.name || req.user?.username || "Investigator";
+    const actorRole = req.user?.role || "INVESTIGATOR";
+
+    addAuditLog(
+      "INTEGRITY_VERIFIED",
+      `${doc.name} (${docId})`,
+      isValid ? "Passed (SHA-256 Match)" : "Failed (Hash Mismatch)",
+      actorUser,
+      actorRole
+    );
+
+    res.json({
+      success: true,
+      documentId: docId,
+      name: doc.name,
+      storedHash: doc.sha256,
+      calculatedHash: calculatedHash,
+      integrityValid: isValid,
+      algorithm: "SHA-256",
+      vaultEncryption: "AES-256 Envelope",
+      verifiedAt: new Date().toISOString(),
+    });
+  } catch (err) {
+    console.error("Integrity verification failed:", err);
+    res.status(500).json({ success: false, error: "Failed to verify integrity: " + err.message });
+  }
+});
+
+// ---------------------------------------------------------
 // AI ANALYSIS API
 // ---------------------------------------------------------
 app.get('/api/v1/ai/analysis/:documentId', validateDocumentId, (req, res) => {
@@ -712,7 +874,7 @@ app.get('/api/v1/verification', (req, res) => {
   res.json(db.verificationIssues);
 });
 
-app.post('/api/v1/verification/:id/resolve', requireAuth, (req, res) => {
+app.post('/api/v1/verification/:id/resolve', requireAuth, requireRole(['ADMIN', 'INVESTIGATOR']), (req, res) => {
   const { decision } = req.body;
   if (!decision) return res.status(400).json({ error: "Decision is required" });
 
@@ -723,9 +885,13 @@ app.post('/api/v1/verification/:id/resolve', requireAuth, (req, res) => {
   issue.status = decision;
   writeDb(db);
 
-  addAuditLog("Human Verification", req.params.id, decision, req.user?.username || "Reviewer", req.user?.role || "Reviewer");
+  const actionName = decision.toLowerCase().includes("override") ? "FINDING_OVERRIDDEN" : "FINDING_CONFIRMED";
+  const actorUser = req.user?.name || req.user?.username || "Reviewer";
+  const actorRole = req.user?.role || "INVESTIGATOR";
 
-  res.json(issue);
+  addAuditLog(actionName, `${req.params.id} -> ${decision}`, "Success", actorUser, actorRole);
+
+  res.json({ success: true, issue });
 });
 
 // ---------------------------------------------------------

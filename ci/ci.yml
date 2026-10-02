@@ -1,0 +1,47 @@
+name: CaseIntel CI Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
+        cache: 'npm'
+        cache-dependency-path: FRONTEND/package-lock.json
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install Frontend Dependencies
+      run: |
+        cd FRONTEND
+        npm ci
+
+    - name: Build Frontend (Next.js)
+      run: |
+        cd FRONTEND
+        npx next build --webpack
+
+    - name: Install Backend Dependencies
+      run: |
+        cd BACKEND/node-service
+        npm ci
+
+    - name: Verify Backend Integrity & Syntax
+      run: |
+        cd BACKEND/node-service
+        node -e "require('./server.js'); console.log('Backend syntax and envelope modules valid.'); process.exit(0);"

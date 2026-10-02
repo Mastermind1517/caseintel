@@ -156,7 +156,7 @@ export default function Home() {
             </div>
           </div>
           <p className="text-3xl font-bold mt-3">{documents.length}</p>
-          <p className="text-xs text-green-600 mt-1">100% Encrypted at Rest</p>
+          <p className="text-xs text-green-600 mt-1">AES-256 Vault Encrypted</p>
         </div>
 
         <div className="bg-white border rounded-xl p-5 shadow-sm">
@@ -177,8 +177,15 @@ export default function Home() {
               <Cpu size={18} />
             </div>
           </div>
-          <p className="text-3xl font-bold mt-3">94.8%</p>
-          <p className="text-xs text-gray-400 mt-1">Indic OCR & Translation accuracy</p>
+          <p className="text-3xl font-bold mt-3">
+            {(() => {
+              const valid = documents.filter((d: any) => typeof d.confidence === "number" && d.confidence > 0);
+              return valid.length > 0
+                ? `${Math.round(valid.reduce((acc: number, curr: any) => acc + curr.confidence, 0) / valid.length)}%`
+                : "Ready";
+            })()}
+          </p>
+          <p className="text-xs text-gray-400 mt-1">Calculated across vaulted documents</p>
         </div>
       </div>
 

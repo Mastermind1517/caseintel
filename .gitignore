@@ -79,4 +79,9 @@ target/
 temp_uploads/
 secure_vault/*.enc
 secure_vault/.local_master.key
+**/secure_vault/*.enc
+**/secure_vault/.local_master.key
 !secure_vault/.gitkeep
+!**/secure_vault/.gitkeep
+AI/.paddlex/
+.paddlex/

@@ -1,5 +1,15 @@
 import { API_BASE_URL } from "@/config/api";
 
+function getAuthHeaders(): HeadersInit {
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem("caseintel_token");
+    if (token) {
+      return { Authorization: `Bearer ${token}` };
+    }
+  }
+  return {};
+}
+
 const fallbackDocuments = [
   {
     id: "DOC-001",
@@ -29,7 +39,10 @@ const fallbackDocuments = [
 
 export async function getDocuments() {
   try {
-    const res = await fetch(`${API_BASE_URL}/documents`, { cache: 'no-store' });
+    const res = await fetch(`${API_BASE_URL}/documents`, {
+      headers: getAuthHeaders(),
+      cache: 'no-store',
+    });
     if (res.ok) {
       return await res.json();
     }
@@ -41,7 +54,10 @@ export async function getDocuments() {
 
 export async function getDocumentById(documentId: string) {
   try {
-    const res = await fetch(`${API_BASE_URL}/documents/${documentId}`, { cache: 'no-store' });
+    const res = await fetch(`${API_BASE_URL}/documents/${documentId}`, {
+      headers: getAuthHeaders(),
+      cache: 'no-store',
+    });
     if (res.ok) {
       return await res.json();
     }
@@ -52,8 +68,10 @@ export async function getDocumentById(documentId: string) {
 }
 
 export async function uploadDocument(formData: FormData) {
+  const headers = getAuthHeaders();
   const res = await fetch(`${API_BASE_URL}/documents/upload`, {
     method: "POST",
+    headers,
     body: formData,
   });
 

@@ -97,19 +97,29 @@ export default function Sidebar() {
         </nav>
       </div>
 
-      {/* System Status Footer */}
-      <div className="p-3.5 rounded-xl bg-gray-50 border text-xs space-y-2">
-        <div className="flex items-center justify-between">
-          <span className="text-gray-500 flex items-center gap-1.5 font-medium">
-            <Cpu size={14} className="text-green-600" /> AI OCR Engine
-          </span>
-          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-green-100 text-green-700">
-            Active
-          </span>
+      <div className="space-y-3">
+        <div className="flex items-center justify-between text-[11px] text-gray-400 px-1 font-medium">
+          <Link href="/privacy" className="hover:text-black hover:underline transition">Privacy</Link>
+          <span>·</span>
+          <Link href="/terms" className="hover:text-black hover:underline transition">Terms</Link>
+          <span>·</span>
+          <Link href="/login" className="hover:text-black hover:underline transition">Switch User</Link>
         </div>
-        <div className="flex items-center justify-between text-[11px] text-gray-400">
-          <span>KMS Vault</span>
-          <span className="text-gray-600 font-mono">AES-256</span>
+
+        {/* System Status Footer */}
+        <div className="p-3.5 rounded-xl bg-gray-50 border text-xs space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-gray-500 flex items-center gap-1.5 font-medium">
+              <Cpu size={14} className="text-green-600" /> AI OCR Engine
+            </span>
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-green-100 text-green-700">
+              Active
+            </span>
+          </div>
+          <div className="flex items-center justify-between text-[11px] text-gray-400">
+            <span>KMS Vault</span>
+            <span className="text-gray-600 font-mono">AES-256</span>
+          </div>
         </div>
       </div>
     </aside>

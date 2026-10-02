@@ -141,4 +141,38 @@ const decryptStream = async (readStream, responseStream) => {
   });
 };
 
-module.exports = { encryptStream, decryptStream };
+const decryptFileToBuffer = async (filePath) => {
+  const encBuffer = fs.readFileSync(filePath);
+  if (encBuffer.length < 18) throw new Error("Encrypted payload too short");
+
+  const edkLength = encBuffer.readUInt16BE(0);
+  const totalHeaderSize = 2 + edkLength + 16;
+  if (encBuffer.length < totalHeaderSize) throw new Error("Corrupted envelope header");
+
+  const edk = encBuffer.subarray(2, 2 + edkLength);
+  const iv = encBuffer.subarray(2 + edkLength, totalHeaderSize);
+  const encryptedFileData = encBuffer.subarray(totalHeaderSize);
+
+  let Plaintext;
+  if (kmsClient && KMS_KEY_ID) {
+    const decryptCmd = new DecryptCommand({ CiphertextBlob: edk });
+    const res = await kmsClient.send(decryptCmd);
+    Plaintext = Buffer.from(res.Plaintext);
+  } else {
+    const masterKey = getLocalMasterKey();
+    const wrapIv = edk.subarray(0, 12);
+    const tag = edk.subarray(12, 28);
+    const encDek = edk.subarray(28);
+
+    const wrapDecipher = crypto.createDecipheriv('aes-256-gcm', masterKey, wrapIv);
+    wrapDecipher.setAuthTag(tag);
+    Plaintext = Buffer.concat([wrapDecipher.update(encDek), wrapDecipher.final()]);
+  }
+
+  const decipher = crypto.createDecipheriv('aes-256-cbc', Plaintext, iv);
+  const decrypted = Buffer.concat([decipher.update(encryptedFileData), decipher.final()]);
+  Plaintext.fill(0);
+  return decrypted;
+};
+
+module.exports = { encryptStream, decryptStream, decryptFileToBuffer };

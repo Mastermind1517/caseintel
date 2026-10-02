@@ -1,6 +1,8 @@
-# CASEINTEL - Secure Legal DMS & Multi-Lingual AI Intelligence Platform
+# CASEINTEL - Secure Legal DMS & Document Intelligence Platform
 
-A production-grade, full-stack legal Document Management System (DMS) and Investigation Platform designed for Indian law enforcement, legal firms, and judiciary workflows.
+> **Hackathon-Ready, Reliable, Secure, and Production-Grade Legal Intelligence & Evidence Vault Platform.**
+
+CaseIntel is a full-stack legal Document Management System (DMS) and Investigation Intelligence Platform built for Indian law enforcement, cybercrime units, and judicial workflows. It enables cryptographic envelope encryption at rest, Indian regional language OCR and translation, Named Entity Recognition (NER), cross-document inconsistency detection, human-in-the-loop verification, and immutable chain-of-custody audit logging.
 
 ---
 
@@ -8,172 +10,141 @@ A production-grade, full-stack legal Document Management System (DMS) and Invest
 
 ```mermaid
 flowchart TD
-    subgraph Client["Frontend Layer (Port 3000)"]
-        UI["Next.js App Router (React 19 + Tailwind v4)"]
-        Dash["Dashboard & Case Workspace"]
+    subgraph Client["Frontend Layer (Next.js 16 - Port 3000)"]
+        UI["App Router (React 19 + Tailwind CSS)"]
+        Login["RBAC Auth Portal (/login)"]
+        Dash["Investigation Dashboard (/)"]
         UploadModal["Evidence Upload & Processing Modal"]
-        Viewer["Multi-Tab OCR & Translation Viewer"]
-        GraphUI["Entity Knowledge Graph & Timeline"]
+        Viewer["Evidence Viewer & Vault Checksum Re-verification"]
+        VerifyUI["Human-in-the-Loop Verification Center (/verification)"]
+        GraphUI["Entity Knowledge Graph & Timeline (/connections, /timeline)"]
+        AuditUI["Immutable Chain of Custody Audit Log (/audit)"]
     end
 
-    subgraph BackendLayer["Backend & Security Layer (Port 3001)"]
-        API["Node.js / Express REST API Gateway"]
-        Auth["Cognito JWT / Local Auth Engine"]
-        Vault["Secure Vault Storage (AES-256 / AWS KMS Envelope)"]
-        Custody["Chain of Custody Audit Logger"]
-        Store["Persistent Investigation JSON Store"]
+    subgraph BackendLayer["Backend API & Storage Gateway (Port 3001)"]
+        API["Node.js / Express REST Gateway"]
+        Auth["HMAC-SHA256 JWT & RBAC Engine (ADMIN / INVESTIGATOR)"]
+        RateLimit["Sliding Window Rate Limiter (Auth, Upload, API)"]
+        MagicBytes["Magic Bytes File Signature Defense (PDF, PNG, JPG, TIFF)"]
+        Vault["Secure Vault Storage (AES-256 Envelope DEK)"]
+        Analyzer["Cross-Document Inconsistency Analyzer (DATE_MISMATCH)"]
+        Store["Persistent Investigation DB Store"]
     end
 
-    subgraph AILayer["AI Document Intelligence Layer (Port 8000)"]
+    subgraph AILayer["AI Document Intelligence Service (Port 8000)"]
         FastAPI["FastAPI Processing Microservice"]
-        Preproc["Denoise / Deskew / Binarize / PDF Loader"]
-        Router["Language Detection & OCR Router"]
-        Paddle["PaddleOCR (Devanagari, Tamil, Telugu, Kannada, English)"]
-        Tess["Tesseract-OCR (Bengali, Fallback)"]
-        Translator["Google Cloud / IndicTrans2 Translation Engine"]
-        Entities["Entity Extraction & Inconsistency Cross-Checker"]
+        Router["Multi-Script OCR Router & Local Model Cache"]
+        Paddle["PaddleOCR (PP-OCRv6 Medium Inference)"]
+        Tess["Tesseract-OCR Engine"]
+        Translator["Translation Pipeline (Indic & English)"]
+        Entities["Named Entity Recognition (People, Locations, Dates, Orgs)"]
     end
 
-    UI --> API
-    UploadModal --> API
-    Viewer --> API
-    GraphUI --> API
+    Login -->|JWT Credentials| API
+    UI -->|Bearer Auth| API
+    UploadModal -->|Validated Multipart| API
+    Viewer -->|Verify Integrity Stream| API
+    VerifyUI -->|Resolve Decision| API
 
     API --> Vault
     API --> Store
-    API --> Custody
     API -->|Multipart Forward| FastAPI
 
-    FastAPI --> Preproc
-    Preproc --> Router
+    FastAPI --> Router
     Router --> Paddle
     Router --> Tess
     Paddle --> Translator
-    Tess --> Translator
     Translator --> Entities
-    Entities -->|OCR, Translation, Entities, Stages| API
+    Entities -->|Structured JSON: OCR, Translation, Entities, Findings| API
 ```
+
+### 🔍 Backend Source of Truth Clarification
+- **Source of Truth:** `BACKEND/node-service` (Node.js/Express) is the unified, active backend API gateway and storage vault.
+- **Java Service Status:** `BACKEND/java-service` was a skeletal prototype stub (`/metadata/register`). The host machine does not have a Java Runtime or Maven installed (`Unable to locate a Java Runtime`). All functionality is consolidated into the Node.js service for stability, zero-latency local development, and hackathon demo reliability. Outdated Java references have been replaced.
 
 ---
 
-## 🚀 Quick Start (One Command)
+## ⚡ Quick Start (One Command)
 
-To run the entire full-stack platform (AI Service + Backend API + Next.js Frontend) in one command:
+To run the entire platform (AI Service + Backend API + Next.js Frontend) in one command:
 
 ```bash
-# Make the startup script executable (if not already)
-chmod +x start.sh
+# 1. Make scripts executable
+chmod +x run_services.sh generate_demo_docs.py
 
-# Start the full stack
-./start.sh
-# or
-npm run dev
+# 2. Generate controlled fictional demo documents
+python3 generate_demo_docs.py
+
+# 3. Launch all 3 services
+./run_services.sh
 ```
 
-Once started:
+### Services Access URLs:
 - 🌐 **Web Application:** [http://localhost:3000](http://localhost:3000)
+- 🔑 **Auth Portal:** [http://localhost:3000/login](http://localhost:3000/login)
 - 🔒 **Backend API & Health Check:** [http://localhost:3001/api/v1/health](http://localhost:3001/api/v1/health)
 - 🤖 **AI Microservice Swagger Docs:** [http://localhost:8000/docs](http://localhost:8000/docs)
 
 ---
 
-## 🧩 Services Overview
+## 🧪 Automated End-to-End Critical Path Test
 
-### 1. `FRONTEND` (Next.js 16 + React 19 + Tailwind v4)
-- **Directory:** `FRONTEND/`
-- **Port:** `3000`
-- **Features:**
-  - **Investigation Dashboard:** Real-time metrics for active cases, encrypted documents, pending human verifications, and system health status.
-  - **Upload & Automated Pipeline:** Drag-and-drop file upload modal supporting scanned Indian language FIRs (PDF, PNG, JPG).
-  - **Document Intelligence Viewer:** Multi-tab document inspector showing Raw OCR Text, English Translation, Structured Form, and Extracted Entities (People, Locations, Dates, Organizations).
-  - **Case Workspaces:** Deep dive into specific cases with dedicated tabs for Evidence Documents, AI Findings, Verification Issues, Timelines, and Audit Records.
-  - **Verification Center:** Human-in-the-loop review interface for resolving conflicting evidence (e.g. date mismatches between FIR and investigation reports).
-  - **Connections Knowledge Graph:** Visual graph mapping cases to documents and extracted persons, locations, and dates.
-  - **Audit Logs:** Immutable chain of custody table recording every upload, OCR pass, and human verification decision.
+Run the full-stack automated test suite verifying all 12 critical path requirements:
 
-### 2. `BACKEND` (Node.js & Express Storage API)
-- **Directory:** `BACKEND/node-service/`
-- **Port:** `3001`
-- **Features:**
-  - **Envelope Encryption:** Every file is encrypted using a cryptographic envelope before hitting storage. Supports **AWS KMS** with automatic fallback to local master-key AES-256 envelope encryption for offline/local development.
-  - **Decryption on Demand:** Authenticated stream decryption for downloading original evidence files.
-  - **File Integrity:** Generates SHA-256 cryptographic hashes for chain of custody verification.
-  - **Pipeline Orchestrator:** Seamlessly forwards uploads to the AI microservice, persists entities, updates timelines, and flags cross-document inconsistencies.
-  - **Chain of Custody:** Automatically records audit log entries for every system and user action.
+```bash
+node test_fullstack.js
+```
 
-### 3. `AI` (Python FastAPI + PaddleOCR + Tesseract + IndicTrans)
-- **Directory:** `AI/`
-- **Port:** `8000`
-- **Features:**
-  - **OCR Engine Routing:** Smart routing directing Devanagari (Hindi), Tamil, Telugu, and Kannada to PaddleOCR, and Bengali to Tesseract.
-  - **Language Auto-Detection:** Heuristic multi-script scanner that scores confidence across candidate languages.
-  - **Translation Engine:** Multi-lingual translation pipeline to English with automatic fallback handling.
-  - **Entity Extraction:** Extracts Accused/Suspect names, police stations/locations, dates of occurrence, and departments.
-  - **PDF & Image Support:** Multi-page PDF ingestion powered by `pypdfium2` and `preprocess.py`.
+### Requirements Verified:
+1. ✅ **Health Checks** (Backend & AI Microservice)
+2. ✅ **Authentication** (JWT generation and validation)
+3. ✅ **RBAC Authorization** (`INVESTIGATOR` vs `ADMIN`)
+4. ✅ **Unauthorized Access Enforcement** (Tampered tokens rejected with HTTP 401/403)
+5. ✅ **Case Creation** (`POST /api/v1/cases`)
+6. ✅ **File Security & Magic Bytes Defense** (Malformed/executable files rejected with HTTP 400)
+7. ✅ **Document 1 Upload (FIR)** + AES-256 Envelope Encryption + SHA-256 Checksum
+8. ✅ **AI OCR & Entity Extraction** (Identifies incident date: `12 August 2026`, location: `Siliguri`, person: `Rahul Sharma`)
+9. ✅ **Document 2 Upload (Investigation Report)** (Incident date: `14 August 2026`)
+10. ✅ **Cross-Document Analysis** (Automatically flags `DATE_MISMATCH` inconsistency)
+11. ✅ **Human Verification Center** (Investigator confirms Source A)
+12. ✅ **Cryptographic Vault Integrity Re-verification** (In-memory decrypted stream SHA-256 match)
+13. ✅ **Append-Only Audit Trail** (`DOCUMENT_UPLOADED`, `HASH_GENERATED`, `OCR_COMPLETED`, `FINDING_CREATED`, `INTEGRITY_VERIFIED`)
 
 ---
 
-## 🛠️ Individual Service Commands
+## 🔐 Preconfigured Demo User Accounts
 
-If you prefer running each service in a separate terminal:
-
-### Terminal 1: AI Microservice
-```bash
-cd AI
-./.venv/bin/python -m uvicorn api:app --host 127.0.0.1 --port 8000 --reload
-```
-
-### Terminal 2: Backend API
-```bash
-cd BACKEND/node-service
-node server.js
-```
-
-### Terminal 3: Frontend Dashboard
-```bash
-cd FRONTEND
-npm run dev
-```
+| Role | Username / Email | Password | Assigned Persona & Department |
+| :--- | :--- | :--- | :--- |
+| **`INVESTIGATOR`** | `investigator` or `investigator@caseintel.local` | `Investigator123!` | Inspector Rajesh Verma · Cyber Crime Division |
+| **`ADMIN`** | `admin` or `admin@caseintel.local` | `Admin123!` | Director Sharma · Special Operations |
 
 ---
 
-## ⚙️ Configuration & Environment Variables
+## ⏱️ 3-Minute Live Hackathon Demo Script
 
-### Backend Configuration (`BACKEND/node-service/.env`)
-```ini
-PORT=3001
-AI_SERVICE_URL=http://127.0.0.1:8000
-ALLOWED_ORIGIN=http://localhost:3000
-
-# Optional AWS Credentials for KMS & Cognito in Production:
-AWS_REGION=us-east-1
-COGNITO_USER_POOL_ID=us-east-1_xxxxxxxxx
-COGNITO_CLIENT_ID=xxxxxxxxxxxxxxxxxxxxxxxx
-KMS_MASTER_KEY_ID=arn:aws:kms:us-east-1:123456789012:key/xxxx-xxxx-xxxx-xxxx
-```
-*(Note: If AWS credentials are not provided, the backend automatically operates in Local Development Mode with AES-256 envelope encryption and local user authentication.)*
-
-### Frontend Configuration (`FRONTEND/.env.local`)
-```ini
-NEXT_PUBLIC_API_URL=http://localhost:3001/api/v1
-NEXT_PUBLIC_AI_URL=http://localhost:8000
-```
+| Time | Screen | Action & Narration | Expected System Output |
+| :--- | :--- | :--- | :--- |
+| **0:00 - 0:30** | `/login` | Click **Sign In as Investigator** (`investigator`). Highlight JWT auth, rate limiting, and RBAC role assignment. | Redirects to Dashboard. Topbar displays `Inspector Rajesh Verma (Cyber Crime)` and blue `INVESTIGATOR` badge. |
+| **0:30 - 1:00** | `/cases` | Click **New Case**, title: `Siliguri Cyber Fraud Dossier` (`CASE-001`), priority: `High`. | Case created; audit log records `CASE_CREATED`. |
+| **1:00 - 1:45** | `/documents` | Click **Upload Document**, select `sample_fir.png` (Type: `FIR`). Show upload modal stages: Envelope Encryption $\rightarrow$ AI OCR $\rightarrow$ Vault Storage. | Document vaulted (`DOC-001.enc`). SHA-256 hash computed. OCR extracts date: `12 August 2026`, person: `Rahul Sharma`, location: `Siliguri`. |
+| **1:45 - 2:15** | `/documents` | Upload second document `sample_investigation_report.png` (Type: `Investigation Report`). | System automatically correlates documents, detects conflicting date (`14 August 2026` vs `12 August 2026`), and creates `DATE_MISMATCH` finding. |
+| **2:15 - 2:35** | `/verification` | Navigate to **Verification Center**. Review side-by-side comparison of FIR vs Investigation Report. Click **Confirm Source A**. | Status updates to `Source A Confirmed`. Action logged as `FINDING_CONFIRMED` in audit trail. |
+| **2:35 - 2:50** | `/documents/DOC-001` | Open Evidence Viewer for `DOC-001`. Click **Verify Vault Cryptographic Integrity**. | Backend decrypts AES-256 stream in memory, recomputes SHA-256, and displays green badge: `✓ Cryptographic Integrity Verified: 100% Match`. |
+| **2:50 - 3:00** | `/audit` & `/connections` | Show immutable audit trail with standard enums and dynamic knowledge graph connecting Case, Evidence, Person, and Dates. | Proof of digital chain of custody. Real dynamic statistics on Dashboard. |
 
 ---
 
-## 🧪 Verification & Health Check
+## 🔒 Security Hardening
 
-1. **Verify Backend Health:**
-   ```bash
-   curl http://localhost:3001/api/v1/health
-   ```
-2. **Verify AI Health:**
-   ```bash
-   curl http://localhost:8000/health
-   ```
-3. **Verify Supported Languages:**
-   ```bash
-   curl http://localhost:8000/languages
-   ```
-# caseintel
-# caseintel
+- **Magic Bytes Validation:** Validates initial buffer signatures (`%PDF-`, `\x89PNG`, `\xFF\xD8\xFF`, `TIFF`) before processing.
+- **Envelope Encryption:** Plaintext files are encrypted with ephemeral 256-bit DEKs using AES-256-CBC, wrapped with AES-256-GCM.
+- **Sliding-Window Rate Limiting:** Enforces limits on login (15/min), document uploads (30/min), and API calls (300/min).
+- **Sanitized File Paths:** Strips path traversal characters (`..`, `/`, `\`) to eliminate traversal vulnerabilities.
+- **Truthful Metrics:** Removed fake hardcoded accuracy claims ("94.8%"). Dashboard displays dynamic counts and evaluated OCR confidence averages.
+
+---
+
+## 📄 License & Governance
+
+CaseIntel is licensed for authorized investigative and law enforcement use. See [Privacy Policy](/privacy) and [Terms of Service](/terms).

@@ -1,5 +1,15 @@
 import { API_BASE_URL } from "@/config/api";
 
+function getAuthHeaders(): HeadersInit {
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem("caseintel_token");
+    if (token) {
+      return { Authorization: `Bearer ${token}` };
+    }
+  }
+  return {};
+}
+
 const fallbackVerificationIssues = [
   {
     id: "ISSUE-001",
@@ -28,7 +38,10 @@ const fallbackVerificationIssues = [
 
 export async function getVerificationIssues() {
   try {
-    const res = await fetch(`${API_BASE_URL}/verification`, { cache: 'no-store' });
+    const res = await fetch(`${API_BASE_URL}/verification`, {
+      headers: getAuthHeaders(),
+      cache: 'no-store',
+    });
     if (res.ok) {
       return await res.json();
     }
@@ -47,6 +60,7 @@ export async function resolveVerificationIssue(
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        ...getAuthHeaders(),
       },
       body: JSON.stringify({ decision }),
     });
