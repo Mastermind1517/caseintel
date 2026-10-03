@@ -76,8 +76,22 @@ export async function uploadDocument(formData: FormData) {
   });
 
   if (!res.ok) {
-    const errorText = await res.text();
-    throw new Error(errorText || `Upload failed with status ${res.status}`);
+    let errorMsg = `Upload failed with status ${res.status}`;
+    try {
+      const rawText = await res.text();
+      try {
+        const json = JSON.parse(rawText);
+        if (json.error || json.message) errorMsg = json.error || json.message;
+      } catch {
+        if (rawText.includes("<pre>")) {
+          const m = rawText.match(/<pre>([\s\S]*?)<\/pre>/i);
+          if (m) errorMsg = m[1].trim();
+        } else if (rawText && rawText.length < 200 && !rawText.startsWith("<")) {
+          errorMsg = rawText;
+        }
+      }
+    } catch {}
+    throw new Error(errorMsg);
   }
 
   return await res.json();

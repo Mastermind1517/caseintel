@@ -12,7 +12,10 @@ const { loginLimiter, uploadLimiter, apiLimiter } = require('./middleware/rateLi
 
 const app = express();
 const PORT = process.env.PORT || 3001;
-const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://127.0.0.1:8000';
+const rawAiUrl = (process.env.AI_SERVICE_URL || 'http://127.0.0.1:8000').trim();
+const AI_SERVICE_URL = rawAiUrl.startsWith('http://') || rawAiUrl.startsWith('https://')
+  ? rawAiUrl.replace(/\/+$/, '')
+  : `http://${rawAiUrl.replace(/\/+$/, '')}`;
 
 // Allow frontend and common origins
 const allowedOrigins = [
@@ -20,22 +23,35 @@ const allowedOrigins = [
   'http://127.0.0.1:3000',
   'http://localhost:3001',
   'http://127.0.0.1:3001',
+  'https://caseintel-seven.vercel.app',
   process.env.ALLOWED_ORIGIN,
 ].filter(Boolean);
 
 app.use(cors({
   origin: (origin, callback) => {
     // allow requests with no origin (like mobile apps, curl, or server-to-server)
-    if (!origin || allowedOrigins.includes(origin) || origin.startsWith('http://localhost:')) {
+    if (!origin || allowedOrigins.includes(origin) || origin.startsWith('http://localhost:') || origin.endsWith('.vercel.app')) {
       return callback(null, true);
     }
-    return callback(null, true); // Permissive for local dev
+    return callback(null, true); // Permissive for hackathon demo
   },
   credentials: true,
 }));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Transparent route alias: automatically rewrite non-prefixed API routes (e.g. /documents/upload, /cases, /auth/login) to /api/v1/*
+app.use((req, res, next) => {
+  if (!req.url.startsWith('/api/v1') && !req.url.startsWith('/_next') && !req.url.startsWith('/favicon')) {
+    const topLevelRoutes = ['/documents', '/cases', '/auth', '/timeline', '/connections', '/verification', '/audit', '/health', '/storage'];
+    if (topLevelRoutes.some(r => req.url === r || req.url.startsWith(r + '/') || req.url.startsWith(r + '?'))) {
+      req.url = '/api/v1' + req.url;
+    }
+  }
+  next();
+});
+
 app.use('/api/v1', apiLimiter);
 
 // 25MB file upload limit
