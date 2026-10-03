@@ -51,12 +51,14 @@ if (!fs.existsSync(SECURE_VAULT_DIR)) fs.mkdirSync(SECURE_VAULT_DIR, { recursive
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 
 // Magic Bytes Verification
-function validateMagicBytes(filePath) {
+function validateMagicBytes(filePath, originalFilename = '') {
   try {
-    const buffer = Buffer.alloc(8);
+    const buffer = Buffer.alloc(512);
     const fd = fs.openSync(filePath, 'r');
-    fs.readSync(fd, buffer, 0, 8, 0);
+    const bytesRead = fs.readSync(fd, buffer, 0, 512, 0);
     fs.closeSync(fd);
+
+    if (bytesRead === 0) return null;
 
     // PDF: %PDF- (0x25 0x50 0x44 0x46)
     if (buffer[0] === 0x25 && buffer[1] === 0x50 && buffer[2] === 0x44 && buffer[3] === 0x46) return 'PDF';
@@ -67,6 +69,19 @@ function validateMagicBytes(filePath) {
     // TIFF: II*\0 (0x49 0x49 0x2A 0x00) or MM\0* (0x4D 0x4D 0x00 0x2A)
     if ((buffer[0] === 0x49 && buffer[1] === 0x49 && buffer[2] === 0x2a && buffer[3] === 0x00) ||
         (buffer[0] === 0x4d && buffer[1] === 0x4d && buffer[2] === 0x00 && buffer[3] === 0x2a)) return 'TIFF';
+
+    // UTF-8 BOM or plain text validation: only allowed for text file extensions (.txt, .log, .csv)
+    const ext = path.extname(originalFilename || '').toLowerCase();
+    const isTextExt = ['.txt', '.log', '.text', '.csv'].includes(ext);
+
+    if (isTextExt) {
+      if (buffer[0] === 0xef && buffer[1] === 0xbb && buffer[2] === 0xbf) return 'TEXT';
+      let isText = true;
+      for (let i = 0; i < bytesRead; i++) {
+        if (buffer[i] === 0x00) { isText = false; break; }
+      }
+      if (isText) return 'TEXT';
+    }
 
     return null;
   } catch (e) {
@@ -550,13 +565,13 @@ app.post('/api/v1/documents/upload', requireAuth, requireRole(['ADMIN', 'INVESTI
   const rawName = req.file.originalname || "document.pdf";
   const originalName = path.basename(rawName).replace(/[^a-zA-Z0-9._-]/g, '_');
 
-  // 1. Magic bytes validation (PDF, PNG, JPG, TIFF)
-  const detectedFormat = validateMagicBytes(tempPath);
+  // 1. Magic bytes validation (PDF, PNG, JPG, TIFF, TXT)
+  const detectedFormat = validateMagicBytes(tempPath, originalName);
   if (!detectedFormat) {
     if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
     return res.status(400).json({
       success: false,
-      error: "Invalid file format: Magic bytes signature mismatch. Allowed formats are PDF, PNG, JPG, TIFF.",
+      error: "Invalid file format: Magic bytes signature mismatch. Allowed formats are PDF, PNG, JPG, TIFF, TXT.",
     });
   }
 

@@ -1,0 +1,45 @@
+================================================================================
+CASEINTEL DIGITAL FORENSIC EVIDENCE LOG
+FORENSIC EXTRACTION & CHAIN OF CUSTODY MANIFEST
+================================================================================
+
+EVIDENCE ARTIFACT ID     : EVD-SEC-2026-9041
+CASE IDENTIFIER          : CASE-001
+PRIMARY SUSPECT          : Rahul Sharma
+INVESTIGATING OFFICER    : Inspector Rajesh Verma
+REPORTING WITNESS        : Dr. Sunita Rao
+INCIDENT DATE RECORDED   : 12 August 2026
+PRIMARY LOCATION         : Connaught Place, New Delhi
+SUPERVISING UNIT         : Cyber Crime Division
+VICTIM ORGANIZATION      : Apex Global Traders
+
+--------------------------------------------------------------------------------
+HARDWARE SPECIFICATION & DIGITAL SEALS
+--------------------------------------------------------------------------------
+Hardware Seized          : Dell Precision 7760 Mobile Workstation
+Serial Number            : SN-CYB-8839210-IN
+Storage Device           : Samsung NVMe SSD 1TB (Firmware 3B2QEXM7)
+Acquisition Technique    : Hardware Write-Blocked Bitstream Image (dd / raw)
+Forensic Tool Utilized   : FTK Imager v4.7.1 & CaseIntel AI Pipeline
+
+--------------------------------------------------------------------------------
+CRYPTOGRAPHIC INTEGRITY HASH VERIFICATION
+--------------------------------------------------------------------------------
+MD5 Master Checksum      : a7c8e9104b9012cd3ef4516789abcde0
+SHA-1 Master Checksum    : 9283f98234bcadef8812903847561029384756ab
+SHA-256 Chain Seal       : e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+Integrity Verification   : PASSED - ZERO BYTE ALTERATION CONFIRMED
+
+--------------------------------------------------------------------------------
+TIMESTAMP EXTRACTION CHRONOLOGY
+--------------------------------------------------------------------------------
+[2026-08-12 14:15:02 UTC] System login: User 'rsharma' (Rahul Sharma)
+[2026-08-12 14:22:18 UTC] Outbound TLS tunnel opened to 198.51.100.44
+[2026-08-12 14:30:00 UTC] High-volume database exfiltration command dispatched
+[2026-08-12 14:35:45 UTC] Local event audit log purge command attempted
+[2026-08-12 14:36:12 UTC] Security daemon flagged abnormal egress pattern
+
+Forensic Examiner:
+Dr. Sunita Rao
+Forensic Science Laboratory, Kolkata
+================================================================================

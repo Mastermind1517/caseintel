@@ -108,13 +108,13 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
           {/* File Picker */}
           <div>
             <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
-              Select Document (PDF, PNG, JPG)
+              Select Document (PDF, PNG, JPG, TXT)
             </label>
             <div className="border-2 border-dashed border-gray-300 rounded-xl p-5 text-center hover:border-black transition bg-gray-50/50">
               <input
                 type="file"
                 id="file-upload"
-                accept=".pdf,.png,.jpg,.jpeg"
+                accept=".pdf,.png,.jpg,.jpeg,.txt"
                 onChange={handleFileChange}
                 disabled={isSubmitting}
                 className="hidden"
@@ -144,6 +144,46 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
                   </div>
                 )}
               </label>
+            </div>
+
+            {/* Quick Demo Test Files */}
+            <div className="mt-3 rounded-lg bg-slate-50 border border-slate-200/70 p-3 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                  Demo Evidence Pack (Ready to Test)
+                </span>
+                <span className="text-[10px] text-slate-400 font-mono">Click to download sample</span>
+              </div>
+              <div className="flex flex-wrap gap-1.5 text-xs">
+                <a
+                  href="/test_evidence/01_FIR_Complaint_12Aug2026.png"
+                  download="01_FIR_Complaint_12Aug2026.png"
+                  className="px-2 py-1 bg-white hover:bg-slate-100 border border-slate-200 rounded text-slate-700 font-mono text-[11px] transition-colors"
+                >
+                  📄 FIR (PNG)
+                </a>
+                <a
+                  href="/test_evidence/02_Investigation_Report_14Aug2026.pdf"
+                  download="02_Investigation_Report_14Aug2026.pdf"
+                  className="px-2 py-1 bg-white hover:bg-slate-100 border border-slate-200 rounded text-slate-700 font-mono text-[11px] transition-colors"
+                >
+                  📑 Report (PDF)
+                </a>
+                <a
+                  href="/test_evidence/05_Witness_Interrogation_Transcript.txt"
+                  download="05_Witness_Interrogation_Transcript.txt"
+                  className="px-2 py-1 bg-white hover:bg-slate-100 border border-slate-200 rounded text-slate-700 font-mono text-[11px] transition-colors"
+                >
+                  📝 Transcript (TXT)
+                </a>
+                <a
+                  href="/test_evidence/06_Cyber_Forensic_Extraction_Log.txt"
+                  download="06_Cyber_Forensic_Extraction_Log.txt"
+                  className="px-2 py-1 bg-white hover:bg-slate-100 border border-slate-200 rounded text-slate-700 font-mono text-[11px] transition-colors"
+                >
+                  💻 Forensic Log (TXT)
+                </a>
+              </div>
             </div>
           </div>
 

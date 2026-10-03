@@ -1,0 +1,56 @@
+================================================================================
+CASEINTEL INVESTIGATION INTELLIGENCE SYSTEM
+POLICE DEPARTMENT - CYBER CRIME DIVISION
+OFFICIAL RECORD OF EXAMINATION UNDER SECTION 161 Cr.P.C.
+================================================================================
+
+Case Reference            : CASE-001
+FIR Number                : FIR-402/2026
+Date of Deposition        : 16 August 2026
+Incident Date             : 12 August 2026
+Examining Officer         : Inspector Rajesh Verma
+Examined Person           : Rahul Sharma
+Complainant Mentioned     : Vikram Malhotra
+Location of Examination   : Cyber Crime Division, New Delhi
+Associated Organization   : Apex Global Traders
+
+--------------------------------------------------------------------------------
+VERBATIM INTERROGATION TRANSCRIPT
+--------------------------------------------------------------------------------
+
+[TIME 10:15:00] Inspector Rajesh Verma:
+State your full name and current designation for the official judicial record.
+
+[TIME 10:15:22] Rahul Sharma:
+My name is Rahul Sharma. I am employed as senior network administrator at Apex Global Traders.
+
+[TIME 10:16:05] Inspector Rajesh Verma:
+Where were you present between 14:00 hours and 17:00 hours on 12 August 2026?
+
+[TIME 10:16:45] Rahul Sharma:
+I was present at the corporate office branch located in Connaught Place, New Delhi. Complainant Vikram Malhotra had instructed me to perform routine server maintenance on that afternoon.
+
+[TIME 10:18:10] Inspector Rajesh Verma:
+The forensic extraction log indicates that administrative credentials registered to your workstation initiated an unauthorized fund routing protocol totaling ₹15,00,000. Did you authorize this transfer?
+
+[TIME 10:19:02] Rahul Sharma:
+I categorically deny issuing any unauthorized transfer orders. My credentials may have been cloned or hijacked through remote Trojan injection. I provided all system audit logs to deponent Dr. Sunita Rao at the Forensic Science Laboratory for independent verification.
+
+[TIME 10:22:30] Inspector Rajesh Verma:
+Are you aware of any other individuals who had physical or remote terminal access to your workstation during this timeframe?
+
+[TIME 10:23:15] Rahul Sharma:
+Only the supervising IT officer and complainant Vikram Malhotra possessed administrative override authority.
+
+--------------------------------------------------------------------------------
+ATTESTATION & CHAIN OF CUSTODY
+--------------------------------------------------------------------------------
+The above statement was transcribed verbatim in the presence of legal counsel and sealed into the CaseIntel encrypted evidence vault.
+
+Recorded by:
+Inspector Rajesh Verma
+Cyber Crime Division, New Delhi
+
+Attested:
+Rahul Sharma (Subject / Accused)
+================================================================================

@@ -96,23 +96,29 @@ def extract_entities(text: str) -> Dict[str, List[str]]:
     }
 
     name_patterns = [
-        r'\b(?:Shri|Smt|Mr\.|Mrs\.|Ms\.|Dr\.|Inspector|Officer)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,2})\b',
-        r'(?:Accused|Complainant|Informant|Victim|Witness|Officer|Investigator|Deponent|Person|Subject|Complainant/Person)\s*[:/]?\s*\n?\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,2})\b',
+        r'\b(?:Shri|Smt|Mr\.|Mrs\.|Ms\.|Dr\.|Inspector|Officer)[^\S\r\n]+([A-Z][a-z]+(?:[^\S\r\n]+[A-Z][a-z]+){1,2})\b',
+        r'(?:Accused|Complainant|Informant|Victim|Witness|Officer|Investigator|Deponent|Person|Subject|Complainant/Person)\s*[:/-]?[^\S\r\n]*\n?[^\S\r\n]*([A-Z][a-z]+(?:[^\S\r\n]+[A-Z][a-z]+){1,2})\b',
         r'\b(?:name of (?:accused|victim|informant)\s*:\s*)([A-Za-z\s]{3,30})\b',
     ]
+    role_suffixes = {"Complainant", "Accused", "Witness", "Deponent", "Officer", "Investigator", "Subject", "Examined"}
     for pattern in name_patterns:
         matches = re.findall(pattern, text, flags=re.IGNORECASE)
         for m in matches:
-            clean_name = m.strip().title()
+            clean_name = re.sub(r'\s+', ' ', m).strip().title()
+            words = clean_name.split()
+            if words and words[-1] in role_suffixes:
+                words = words[:-1]
+                clean_name = " ".join(words)
             if clean_name and len(clean_name) > 3 and clean_name not in stop_words and clean_name not in entities["people"]:
                 entities["people"].append(clean_name)
 
     # Fallback capitalized 2-word names if none found
     if not entities["people"]:
-        cap_names = re.findall(r'\b([A-Z][a-z]{2,15}\s+[A-Z][a-z]{2,15})\b', text)
+        cap_names = re.findall(r'\b([A-Z][a-z]{2,15}[^\S\r\n]+[A-Z][a-z]{2,15})\b', text)
         for cn in cap_names:
-            if cn not in stop_words and cn not in entities["people"]:
-                entities["people"].append(cn)
+            cn_clean = re.sub(r'\s+', ' ', cn).strip()
+            if cn_clean not in stop_words and cn_clean not in entities["people"]:
+                entities["people"].append(cn_clean)
                 if len(entities["people"]) >= 3:
                     break
 
@@ -233,56 +239,85 @@ async def process_document(
         if not file_bytes:
             raise HTTPException(status_code=400, detail="Uploaded file is empty.")
 
-        # Convert uploaded file (image or PDF) into a list of PIL pages
-        try:
-            pages = load_pages(file_bytes, filename=file.filename or "")
-            if not pages:
-                raise ValueError("No pages extracted")
-        except Exception as e:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Could not parse uploaded file: {e}",
-            )
-
-        all_text_parts = []
-        all_confidences = []
-        resolved_language = language
-        scores = None
-        engine_used = "Unknown"
-
-        # Process each page (for multi-page docs, run OCR on each page)
-        for i, page in enumerate(pages):
-            # Detect language on the first page if set to auto
-            if language == "auto" and i == 0:
-                detected_lang, lang_scores = detect_language(page, preprocess=preprocess)
-                scores = lang_scores
-                resolved_language = detected_lang if detected_lang else "english"
-
-            cur_lang = normalize_language(resolved_language)
-
-            ocr_results, cur_engine = run_ocr(
-                page,
-                language=cur_lang,
-                preprocess=preprocess,
-            )
-            engine_used = cur_engine
-
-            page_text = ocr_to_plain_text(ocr_results, min_confidence=min_confidence)
-            page_conf = average_confidence(ocr_results)
-
-            if page_text.strip():
-                all_text_parts.append(page_text)
-            if page_conf > 0:
-                all_confidences.append(page_conf)
-
-        extracted_text = "\n\n".join(all_text_parts).strip()
-        overall_confidence = (
-            round(sum(all_confidences) / len(all_confidences), 1)
-            if all_confidences
-            else 0.0
+        # Handle plain text / log files directly without OCR conversion
+        filename_lower = (file.filename or "").lower()
+        is_text_file = filename_lower.endswith((".txt", ".log", ".text", ".csv", ".json")) or (
+            b"\x00" not in file_bytes[:512]
+            and not file_bytes.startswith(b"%PDF")
+            and not file_bytes.startswith(b"\x89PNG")
+            and not file_bytes.startswith(b"\xff\xd8\xff")
         )
 
-        cur_lang = normalize_language(resolved_language)
+        if is_text_file:
+            try:
+                extracted_text = file_bytes.decode("utf-8").strip()
+            except UnicodeDecodeError:
+                extracted_text = file_bytes.decode("latin-1", errors="ignore").strip()
+            overall_confidence = 100.0
+            engine_used = "Text Ingestion Engine"
+            resolved_language = "english"
+            scores = None
+            cur_lang = "english"
+        else:
+            # Convert uploaded file (image or PDF) into a list of PIL pages
+            try:
+                pages = load_pages(file_bytes, filename=file.filename or "")
+                if not pages:
+                    raise ValueError("No pages extracted")
+            except Exception as e:
+                if b"\x00" not in file_bytes[:512]:
+                    extracted_text = file_bytes.decode("utf-8", errors="ignore").strip()
+                    overall_confidence = 100.0
+                    engine_used = "Text Ingestion Engine"
+                    resolved_language = "english"
+                    scores = None
+                    cur_lang = "english"
+                    pages = []
+                else:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Could not parse uploaded file: {e}",
+                    )
+
+            if pages:
+                all_text_parts = []
+                all_confidences = []
+                resolved_language = language
+                scores = None
+                engine_used = "Unknown"
+
+                # Process each page (for multi-page docs, run OCR on each page)
+                for i, page in enumerate(pages):
+                    # Detect language on the first page if set to auto
+                    if language == "auto" and i == 0:
+                        detected_lang, lang_scores = detect_language(page, preprocess=preprocess)
+                        scores = lang_scores
+                        resolved_language = detected_lang if detected_lang else "english"
+
+                    cur_lang = normalize_language(resolved_language)
+
+                    ocr_results, cur_engine = run_ocr(
+                        page,
+                        language=cur_lang,
+                        preprocess=preprocess,
+                    )
+                    engine_used = cur_engine
+
+                    page_text = ocr_to_plain_text(ocr_results, min_confidence=min_confidence)
+                    page_conf = average_confidence(ocr_results)
+
+                    if page_text.strip():
+                        all_text_parts.append(page_text)
+                    if page_conf > 0:
+                        all_confidences.append(page_conf)
+
+                extracted_text = "\n\n".join(all_text_parts).strip()
+                overall_confidence = (
+                    round(sum(all_confidences) / len(all_confidences), 1)
+                    if all_confidences
+                    else 0.0
+                )
+                cur_lang = normalize_language(resolved_language)
 
         # Translation
         translation = None
