@@ -1,0 +1,50 @@
+[
+  {
+    "id": "usr-admin-001",
+    "username": "admin",
+    "email": "admin@caseintel.local",
+    "passwordHash": "3eb3fe66b31e3b4d10fa70b5cad49c7112294af6ae4e476a1c405155d45aa121",
+    "name": "Director Sharma",
+    "role": "ADMIN",
+    "department": "Special Operations"
+  },
+  {
+    "id": "usr-inv-001",
+    "username": "investigator",
+    "email": "investigator@caseintel.local",
+    "passwordHash": "9012698eaf776599a36a19a803452f758b99215ee75254d9af3461d0553f17c0",
+    "name": "Inspector Rajesh Verma",
+    "role": "INVESTIGATOR",
+    "department": "Cyber Crime"
+  },
+  {
+    "id": "usr-mur80pac-5c34c4",
+    "username": "vmalhotra",
+    "email": "vmalhotra@caseintel.gov",
+    "passwordHash": "25d962d403426699fe878bd8eba6fc9df321fac748aeb01f57106cf3036d0185",
+    "name": "Agent Vikram Malhotra",
+    "role": "INVESTIGATOR",
+    "department": "Special Narcotics Wing",
+    "createdAt": "2026-10-02T17:12:16.644Z"
+  },
+  {
+    "id": "usr-mur9omok-093ced",
+    "username": "agent_mur9omoi",
+    "email": "agent_mur9omoi@caseintel.gov",
+    "passwordHash": "ac20fb8d55e216f353f31a258f1c3071c233371d89e91125b5ab322faa7a1c39",
+    "name": "Agent Maya Sen",
+    "role": "INVESTIGATOR",
+    "department": "Special Operations Wing",
+    "createdAt": "2026-10-02T17:58:52.628Z"
+  },
+  {
+    "id": "usr-murven97-54d78b",
+    "username": "agent_murven95",
+    "email": "agent_murven95@caseintel.gov",
+    "passwordHash": "ac20fb8d55e216f353f31a258f1c3071c233371d89e91125b5ab322faa7a1c39",
+    "name": "Agent Maya Sen",
+    "role": "INVESTIGATOR",
+    "department": "Special Operations Wing",
+    "createdAt": "2026-10-03T04:06:58.363Z"
+  }
+]

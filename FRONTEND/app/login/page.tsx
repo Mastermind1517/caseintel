@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Shield, Lock, User, ArrowRight, CheckCircle2, AlertCircle, Building, Mail, UserPlus, KeyRound } from "lucide-react";
 import { API_BASE_URL } from "@/config/api";
@@ -25,6 +25,17 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("caseintel_user");
+      const token = localStorage.getItem("caseintel_token");
+      if (stored && token) {
+        setCurrentUser(JSON.parse(stored));
+      }
+    } catch {}
+  }, []);
 
   // Helper: Retrieve locally registered users (for offline / hosted Vercel fallback)
   const getLocalUsers = (): any[] => {
@@ -282,6 +293,24 @@ export default function LoginPage() {
 
       <div className="mt-6 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-7 px-6 shadow-sm border rounded-2xl sm:px-10 space-y-5">
+          {/* Active Session Indicator */}
+          {currentUser && (
+            <div className="p-3 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold text-blue-900">Signed in as {currentUser.name || currentUser.username}</p>
+                <p className="text-[11px] text-blue-700">{currentUser.department || currentUser.role}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => router.push("/")}
+                className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition cursor-pointer flex items-center gap-1 shadow-xs"
+              >
+                <span>Dashboard</span>
+                <ArrowRight size={13} />
+              </button>
+            </div>
+          )}
+
           {/* Mode Switcher Tabs */}
           <div className="flex rounded-xl bg-gray-100 p-1">
             <button
