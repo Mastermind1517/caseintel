@@ -4,11 +4,14 @@
  */
 
 const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'caseintel-hackathon-secure-jwt-secret-key-2026';
+const USERS_FILE = path.join(__dirname, '..', 'data', 'users.json');
 
 // Controlled Fictional Demo Accounts
-const USERS = [
+const INITIAL_USERS = [
   {
     id: "usr-admin-001",
     username: "admin",
@@ -28,6 +31,34 @@ const USERS = [
     department: "Cyber Crime",
   },
 ];
+
+function loadUsers() {
+  try {
+    if (fs.existsSync(USERS_FILE)) {
+      const data = fs.readFileSync(USERS_FILE, 'utf8');
+      const parsed = JSON.parse(data);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    }
+  } catch (err) {
+    console.error("Error reading users.json:", err);
+  }
+  saveUsers(INITIAL_USERS);
+  return [...INITIAL_USERS];
+}
+
+function saveUsers(users) {
+  try {
+    const dir = path.dirname(USERS_FILE);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2), 'utf8');
+  } catch (err) {
+    console.error("Error saving users.json:", err);
+  }
+}
+
+const USERS = loadUsers();
 
 // Helper: Base64URL encode/decode
 function base64UrlEncode(str) {
@@ -95,7 +126,8 @@ function verifyToken(token) {
 function authenticateUser(identifier, password) {
   if (!identifier || !password) return null;
   const hash = crypto.createHash('sha256').update(password).digest('hex');
-  const user = USERS.find(
+  const users = loadUsers();
+  const user = users.find(
     (u) =>
       (u.username.toLowerCase() === identifier.toLowerCase() ||
         u.email.toLowerCase() === identifier.toLowerCase()) &&
@@ -112,6 +144,62 @@ function authenticateUser(identifier, password) {
     email: user.email,
     role: user.role,
     department: user.department,
+  });
+
+  return { user: userSafe, token };
+}
+
+// Register a new custom user ID
+function registerUser({ username, email, password, name, department, role }) {
+  if (!username || !password || !name) {
+    throw new Error('Username, password, and official name are required.');
+  }
+
+  const cleanUsername = username.trim().toLowerCase();
+  const cleanEmail = (email || `${cleanUsername}@caseintel.local`).trim().toLowerCase();
+
+  if (cleanUsername.length < 3) {
+    throw new Error('Username must be at least 3 characters long.');
+  }
+
+  if (password.length < 6) {
+    throw new Error('Password must be at least 6 characters long.');
+  }
+
+  const users = loadUsers();
+  const exists = users.some(
+    (u) => u.username.toLowerCase() === cleanUsername || u.email.toLowerCase() === cleanEmail
+  );
+
+  if (exists) {
+    throw new Error(`An account with username '${cleanUsername}' or email '${cleanEmail}' already exists.`);
+  }
+
+  const validRole = (role || 'INVESTIGATOR').toUpperCase();
+  const finalRole = ['ADMIN', 'INVESTIGATOR'].includes(validRole) ? validRole : 'INVESTIGATOR';
+
+  const newUser = {
+    id: `usr-${Date.now().toString(36)}-${crypto.randomBytes(3).toString('hex')}`,
+    username: cleanUsername,
+    email: cleanEmail,
+    passwordHash: crypto.createHash('sha256').update(password).digest('hex'),
+    name: name.trim(),
+    role: finalRole,
+    department: (department || 'Field Investigation').trim(),
+    createdAt: new Date().toISOString(),
+  };
+
+  users.push(newUser);
+  saveUsers(users);
+
+  const { passwordHash, ...userSafe } = newUser;
+  const token = signToken({
+    sub: newUser.id,
+    username: newUser.username,
+    name: newUser.name,
+    email: newUser.email,
+    role: newUser.role,
+    department: newUser.department,
   });
 
   return { user: userSafe, token };
@@ -199,6 +287,7 @@ module.exports = {
   signToken,
   verifyToken,
   authenticateUser,
+  registerUser,
   requireAuth,
   requireRole,
 };

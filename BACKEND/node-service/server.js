@@ -7,7 +7,7 @@ const path = require('path');
 const cors = require('cors');
 const { PassThrough } = require('stream');
 const { encryptStream, decryptStream, decryptFileToBuffer } = require('./encryptionUtils');
-const { USERS, authenticateUser, requireAuth, requireRole } = require('./middleware/auth');
+const { USERS, authenticateUser, registerUser, requireAuth, requireRole } = require('./middleware/auth');
 const { loginLimiter, uploadLimiter, apiLimiter } = require('./middleware/rateLimiter');
 
 const app = express();
@@ -426,6 +426,32 @@ app.post('/api/v1/auth/login', loginLimiter, (req, res) => {
     token: result.token,
     user: result.user,
   });
+});
+
+app.post('/api/v1/auth/register', loginLimiter, (req, res) => {
+  const { username, email, password, name, department, role } = req.body;
+  if (!username || !password || !name) {
+    return res.status(400).json({
+      success: false,
+      error: "Official full name, username/ID, and password are required.",
+    });
+  }
+
+  try {
+    const result = registerUser({ username, email, password, name, department, role });
+    addAuditLog("USER_REGISTERED", result.user.username, "Success", result.user.name, result.user.role);
+
+    res.status(201).json({
+      success: true,
+      token: result.token,
+      user: result.user,
+    });
+  } catch (err) {
+    return res.status(400).json({
+      success: false,
+      error: err.message,
+    });
+  }
 });
 
 app.get('/api/v1/auth/me', requireAuth, (req, res) => {

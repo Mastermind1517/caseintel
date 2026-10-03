@@ -73,6 +73,36 @@ async function runTests() {
     recordTest("Admin Authentication (JWT Login)", false, e.message);
   }
 
+  // 2b. Custom User ID Registration & Authentication
+  const customId = `agent_${Date.now().toString(36)}`;
+  try {
+    const res = await fetch(`${API_URL}/api/v1/auth/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: "Agent Maya Sen",
+        username: customId,
+        email: `${customId}@caseintel.gov`,
+        password: "CustomPassword123!",
+        department: "Special Operations Wing",
+        role: "INVESTIGATOR",
+      }),
+    });
+    const regData = await res.json();
+    recordTest("Custom User ID Registration (POST /auth/register)", regData.success === true && regData.user?.username === customId, `ID: ${customId}, Role: ${regData.user?.role}`);
+
+    // Verify login with newly registered custom ID
+    const loginRes = await fetch(`${API_URL}/api/v1/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: customId, password: "CustomPassword123!" }),
+    });
+    const loginData = await loginRes.json();
+    recordTest("Custom User ID Login (POST /auth/login)", loginData.success === true && loginData.user?.name === "Agent Maya Sen", `Name: ${loginData.user?.name}`);
+  } catch (e) {
+    recordTest("Custom User ID Registration", false, e.message);
+  }
+
   // 3. Unauthorized Access Enforcement (Invalid/Missing Token)
   try {
     const res = await fetch(`${API_URL}/api/v1/cases`, {
