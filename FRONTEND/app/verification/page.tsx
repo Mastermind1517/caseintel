@@ -48,7 +48,7 @@ export default function VerificationPage() {
   };
 
   return (
-    <main className="p-8 max-w-7xl mx-auto space-y-6">
+    <main className="p-4 sm:p-6 md:p-8 max-w-7xl mx-auto space-y-6">
 
       {/* Page Header */}
 
@@ -131,8 +131,7 @@ export default function VerificationPage() {
               </p>
 
               {/* Comparison */}
-
-              <div className="grid grid-cols-2 gap-4 mt-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
 
                 {/* Source A */}
 
@@ -199,10 +198,8 @@ export default function VerificationPage() {
               </div>
 
               {/* Actions */}
-
               {issue.status === "pending" && (
-
-                <div className="flex gap-3 mt-6">
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-6">
 
                   <button
                     onClick={() =>

@@ -12,6 +12,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     // Check authentication token in localStorage
@@ -27,6 +28,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       router.replace("/login");
     }
   }, [pathname, router]);
+
+  // Close mobile drawer on route change
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [pathname]);
 
   const isLoginPage = pathname === "/login";
   const isPublicRoute = PUBLIC_ROUTES.includes(pathname);
@@ -55,14 +61,17 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     return <main className="w-full min-h-screen">{children}</main>;
   }
 
-  // Authenticated (or public info pages like privacy/terms): render complete dashboard shell
+  // Authenticated: render responsive dashboard shell with mobile drawer support
   return (
-    <>
-      <Sidebar />
+    <div className="min-h-screen flex flex-col md:flex-row bg-gray-50 text-gray-900 w-full overflow-x-hidden">
+      <Sidebar
+        isOpen={mobileMenuOpen}
+        onClose={() => setMobileMenuOpen(false)}
+      />
       <div className="flex-1 flex flex-col min-w-0 min-h-screen">
-        <Topbar />
+        <Topbar onOpenSidebar={() => setMobileMenuOpen(true)} />
         <main className="flex-1 overflow-y-auto">{children}</main>
       </div>
-    </>
+    </div>
   );
 }

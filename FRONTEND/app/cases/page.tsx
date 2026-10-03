@@ -55,7 +55,7 @@ export default function CasesPage() {
   );
 
   return (
-    <main className="p-8 max-w-7xl mx-auto space-y-6">
+    <main className="p-4 sm:p-6 md:p-8 max-w-7xl mx-auto space-y-6">
       {/* Toast Notification */}
       {toast && (
         <div className="p-4 rounded-xl bg-green-50 border border-green-200 text-green-800 text-sm flex items-center justify-between shadow-xs">
@@ -108,8 +108,8 @@ export default function CasesPage() {
       </div>
 
       {/* Case table */}
-      <div className="bg-white border rounded-xl overflow-hidden shadow-xs">
-        <table className="w-full text-sm">
+      <div className="bg-white border rounded-xl overflow-x-auto shadow-xs">
+        <table className="w-full text-sm min-w-[640px]">
           <thead className="bg-gray-50 border-b text-xs font-semibold text-gray-500 uppercase tracking-wider">
             <tr>
               <th className="text-left px-5 py-3.5">Case ID</th>

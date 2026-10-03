@@ -24,7 +24,7 @@ export default function AuditPage() {
   }, []);
 
   return (
-    <main className="p-8">
+    <main className="p-4 sm:p-6 md:p-8 max-w-7xl mx-auto space-y-6">
 
       {/* HEADER */}
 

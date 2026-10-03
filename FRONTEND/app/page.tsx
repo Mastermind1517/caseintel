@@ -64,37 +64,37 @@ export default function Home() {
   const pendingIssues = issues.filter((i) => i.status === "pending").length;
 
   return (
-    <main className="p-8 max-w-7xl mx-auto space-y-8">
+    <main className="p-4 sm:p-6 md:p-8 max-w-7xl mx-auto space-y-6 sm:space-y-8">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Investigation Dashboard</h1>
-          <p className="text-gray-500 mt-1">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Investigation Dashboard</h1>
+          <p className="text-gray-500 mt-1 text-xs sm:text-sm">
             Real-time case intelligence, envelope-encrypted documents, and Indic AI processing.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <Link
             href="/documents"
-            className="flex items-center gap-2 bg-black text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-800 transition"
+            className="flex-1 sm:flex-initial flex items-center justify-center gap-2 bg-black text-white px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium hover:bg-gray-800 transition"
           >
-            <Upload size={16} />
+            <Upload size={15} />
             Upload Document
           </Link>
           <Link
             href="/cases"
-            className="flex items-center gap-2 border bg-white text-gray-700 px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-50 transition"
+            className="flex-1 sm:flex-initial flex items-center justify-center gap-2 border bg-white text-gray-700 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium hover:bg-gray-50 transition"
           >
-            <Plus size={16} />
+            <Plus size={15} />
             New Case
           </Link>
         </div>
       </div>
 
       {/* System Status Banner */}
-      <div className="bg-white border rounded-xl p-4 flex flex-wrap items-center justify-between gap-4 text-xs">
-        <div className="flex items-center gap-6">
+      <div className="bg-white border rounded-xl p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 sm:gap-6">
           <div className="flex items-center gap-2">
             <span
               className={`w-2.5 h-2.5 rounded-full ${
