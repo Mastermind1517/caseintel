@@ -32,60 +32,72 @@ export default function Topbar({ onOpenSidebar }: TopbarProps) {
   };
 
   const isAdmin = (user.role || "").toUpperCase() === "ADMIN";
+  const userInitials = (user.name || user.username || "IV")
+    .split(" ")
+    .map((n: string) => n[0])
+    .join("")
+    .substring(0, 2)
+    .toUpperCase();
 
   return (
-    <header className="h-16 border-b bg-white flex items-center justify-between px-3 sm:px-6 shrink-0">
-      <div className="flex items-center gap-2">
+    <header className="h-16 border-b border-slate-200/80 bg-white flex items-center justify-between px-4 sm:px-8 shrink-0">
+      <div className="flex items-center gap-3">
         {/* Mobile Hamburger Menu Toggle */}
         {onOpenSidebar && (
           <button
             onClick={onOpenSidebar}
-            className="md:hidden p-2 -ml-1 text-gray-600 hover:text-black hover:bg-gray-100 rounded-lg transition cursor-pointer"
+            className="md:hidden p-1.5 -ml-1 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition cursor-pointer"
             aria-label="Open Navigation Menu"
           >
-            <Menu size={20} />
+            <Menu size={19} />
           </button>
         )}
 
-        {/* Search Bar - Responsive width */}
-        <div className="hidden sm:flex items-center gap-2 border rounded-lg px-3 py-1.5 w-44 sm:w-64 md:w-80">
-          <Search size={16} className="text-gray-400 shrink-0" />
+        {/* Global Evidence Search Bar */}
+        <div className="hidden sm:flex items-center gap-2 border border-slate-200/80 rounded-lg px-3 py-1.5 w-60 md:w-80 bg-slate-50/50 focus-within:bg-white focus-within:border-slate-400 transition-colors">
+          <Search size={14} className="text-slate-400 shrink-0" />
           <input
             type="text"
-            placeholder="Search dossiers, SHA-256..."
-            className="outline-none text-xs w-full placeholder:text-gray-400"
+            placeholder="Search cases, dossiers, SHA-256..."
+            className="outline-none text-xs w-full placeholder:text-slate-400 bg-transparent text-slate-800"
           />
         </div>
       </div>
 
-      <div className="flex items-center gap-2 sm:gap-4">
+      <div className="flex items-center gap-3 sm:gap-4">
         {/* Role Badge */}
         <span
-          className={`inline-flex items-center gap-1 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold ${
+          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold tracking-wide uppercase border ${
             isAdmin
-              ? "bg-purple-100 text-purple-800 border border-purple-200"
-              : "bg-blue-100 text-blue-800 border border-blue-200"
+              ? "bg-purple-50 text-purple-700 border-purple-200/70"
+              : "bg-indigo-50 text-indigo-700 border-indigo-200/70"
           }`}
         >
           <Shield size={11} />
           {user.role || "INVESTIGATOR"}
         </span>
 
-        {/* User Info */}
-        <div className="text-right max-w-[130px] sm:max-w-none truncate">
-          <p className="text-xs font-semibold text-gray-900 truncate">
-            {user.name || user.username || "Investigator"}
-          </p>
-          <p className="hidden sm:block text-[11px] text-gray-500 truncate">
-            {user.department || "Cyber Crime"}
-          </p>
+        {/* User Identity Info */}
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-xs text-slate-700 shrink-0">
+            {userInitials}
+          </div>
+          <div className="text-right hidden sm:block">
+            <p className="text-xs font-semibold text-slate-900 leading-tight">
+              {user.name || user.username || "Investigator"}
+            </p>
+            <p className="text-[11px] text-slate-500 leading-tight">
+              {user.department || "Cyber Crime"}
+            </p>
+          </div>
         </div>
 
-        {/* Quick Link to Logout */}
+        {/* Quick Sign Out Action */}
         <button
           onClick={handleLogout}
           title="Sign out or switch role"
-          className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition cursor-pointer"
+          className="p-1.5 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition cursor-pointer"
+          aria-label="Sign out"
         >
           <LogOut size={16} />
         </button>

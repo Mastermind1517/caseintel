@@ -46,5 +46,25 @@
     "role": "INVESTIGATOR",
     "department": "Special Operations Wing",
     "createdAt": "2026-10-03T04:06:58.363Z"
+  },
+  {
+    "id": "usr-murx1w0p-944e45",
+    "username": "agent_murx1w0n",
+    "email": "agent_murx1w0n@caseintel.gov",
+    "passwordHash": "ac20fb8d55e216f353f31a258f1c3071c233371d89e91125b5ab322faa7a1c39",
+    "name": "Agent Maya Sen",
+    "role": "INVESTIGATOR",
+    "department": "Special Operations Wing",
+    "createdAt": "2026-10-03T04:53:02.425Z"
+  },
+  {
+    "id": "usr-murxdper-8a7e11",
+    "username": "agent_murxdpep",
+    "email": "agent_murxdpep@caseintel.gov",
+    "passwordHash": "ac20fb8d55e216f353f31a258f1c3071c233371d89e91125b5ab322faa7a1c39",
+    "name": "Agent Maya Sen",
+    "role": "INVESTIGATOR",
+    "department": "Special Operations Wing",
+    "createdAt": "2026-10-03T05:02:13.731Z"
   }
 ]

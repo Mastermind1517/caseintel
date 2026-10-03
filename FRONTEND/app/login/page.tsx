@@ -280,19 +280,19 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-10 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-slate-50/60 flex flex-col justify-center py-10 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-black text-white mb-3 shadow-md">
-          <Shield size={28} />
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-slate-900 text-white mb-3 shadow-xs">
+          <Shield size={24} />
         </div>
-        <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">CaseIntel</h2>
-        <p className="mt-1 text-sm text-gray-500">
+        <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">CaseIntel</h2>
+        <p className="mt-1 text-xs text-slate-500">
           Digital Evidence Chain of Custody & Document Intelligence
         </p>
       </div>
 
       <div className="mt-6 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-7 px-6 shadow-sm border rounded-2xl sm:px-10 space-y-5">
+        <div className="bg-white py-7 px-6 shadow-xs border border-slate-200/80 rounded-2xl sm:px-10 space-y-5">
           {/* Active Session Indicator */}
           {currentUser && (
             <div className="p-3 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-between">

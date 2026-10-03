@@ -98,51 +98,51 @@ export default function CaseWorkspace() {
   const pendingIssues = issues.filter((i) => i.status === "pending");
 
   return (
-    <main className="p-8 max-w-7xl mx-auto space-y-6">
+    <main className="p-4 sm:p-6 md:p-8 max-w-7xl mx-auto space-y-6">
       {/* Back */}
       <Link
         href="/cases"
-        className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-black transition"
+        className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-400 hover:text-slate-900 transition"
       >
-        <ArrowLeft size={16} />
+        <ArrowLeft size={14} />
         Back to Cases
       </Link>
 
       {/* Case Header */}
-      <div className="bg-white border rounded-xl p-6 shadow-xs">
+      <div className="bg-white border border-slate-200/80 rounded-xl p-5 sm:p-6 shadow-xs">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2.5">
-              <span className="font-mono text-xs px-2.5 py-1 rounded-md bg-gray-100 text-gray-700 font-bold">
+              <span className="font-mono text-xs px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-700 font-bold border border-slate-200">
                 {caseData.id}
               </span>
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700">
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200/60">
                 {caseData.status}
               </span>
             </div>
-            <h1 className="text-2xl font-bold tracking-tight mt-2 text-gray-900">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight mt-2 text-slate-900">
               {caseData.name}
             </h1>
-            <p className="text-xs text-gray-500 mt-1">
-              Department: <span className="font-medium text-gray-700">{caseData.department}</span> ·
-              Priority: <span className="font-medium text-gray-700">{caseData.priority}</span> · Officer:{" "}
-              <span className="font-medium text-gray-700">{caseData.officer || "Investigator"}</span>
+            <p className="text-xs text-slate-500 mt-1">
+              Department: <span className="font-medium text-slate-700">{caseData.department}</span> ·
+              Priority: <span className="font-medium text-slate-700">{caseData.priority}</span> · Officer:{" "}
+              <span className="font-medium text-slate-700">{caseData.officer || "Investigator"}</span>
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             <button
               onClick={() => setIsUploadOpen(true)}
-              className="flex items-center gap-2 bg-black hover:bg-gray-800 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition shadow-xs"
+              className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-3.5 py-2 rounded-lg text-xs font-medium transition shadow-xs cursor-pointer"
             >
-              <Upload size={16} />
+              <Upload size={14} />
               Add Evidence File
             </button>
             <Link
               href="/connections"
-              className="flex items-center gap-2 border bg-white text-gray-700 hover:bg-gray-50 px-4 py-2.5 rounded-lg text-sm font-medium transition shadow-xs"
+              className="flex items-center gap-2 border border-slate-200/90 bg-white text-slate-700 hover:bg-slate-50 px-3.5 py-2 rounded-lg text-xs font-medium transition shadow-xs"
             >
-              <Network size={16} />
+              <Network size={14} />
               Entity Graph
             </Link>
           </div>
