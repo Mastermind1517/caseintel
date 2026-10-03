@@ -1,14 +1,4 @@
-import { API_BASE_URL } from "@/config/api";
-
-function getAuthHeaders(): HeadersInit {
-  if (typeof window !== "undefined") {
-    const token = localStorage.getItem("caseintel_token");
-    if (token) {
-      return { Authorization: `Bearer ${token}` };
-    }
-  }
-  return {};
-}
+import { API_BASE_URL, getAuthHeaders } from "@/config/api";
 
 const fallbackCases = [
   {

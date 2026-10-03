@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Shield, Lock, User, ArrowRight, CheckCircle2, AlertCircle, Building, Mail, UserPlus, KeyRound } from "lucide-react";
-import { API_BASE_URL } from "@/config/api";
+import { API_BASE_URL, createClientJwt } from "@/config/api";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -111,7 +111,7 @@ export default function LoginPage() {
         if (found) {
           const { password: _, ...userSafe } = found;
           if (typeof window !== "undefined") {
-            localStorage.setItem("caseintel_token", `local-jwt-${found.id}`);
+            localStorage.setItem("caseintel_token", createClientJwt(userSafe));
             localStorage.setItem("caseintel_user", JSON.stringify(userSafe));
           }
           loggedIn = true;
@@ -130,7 +130,7 @@ export default function LoginPage() {
             department: "Cyber Crime",
           };
           if (typeof window !== "undefined") {
-            localStorage.setItem("caseintel_token", "demo-jwt-investigator-offline");
+            localStorage.setItem("caseintel_token", createClientJwt(demoUser));
             localStorage.setItem("caseintel_user", JSON.stringify(demoUser));
           }
           loggedIn = true;
@@ -144,7 +144,7 @@ export default function LoginPage() {
             department: "Special Operations",
           };
           if (typeof window !== "undefined") {
-            localStorage.setItem("caseintel_token", "demo-jwt-admin-offline");
+            localStorage.setItem("caseintel_token", createClientJwt(demoUser));
             localStorage.setItem("caseintel_user", JSON.stringify(demoUser));
           }
           loggedIn = true;
@@ -253,7 +253,7 @@ export default function LoginPage() {
         };
 
         if (typeof window !== "undefined") {
-          localStorage.setItem("caseintel_token", `local-jwt-${newUser.id}`);
+          localStorage.setItem("caseintel_token", createClientJwt(newUser));
           localStorage.setItem("caseintel_user", JSON.stringify(newUser));
           saveLocalUser(newUser, regPassword);
         }
