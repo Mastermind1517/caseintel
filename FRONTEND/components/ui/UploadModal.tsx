@@ -23,6 +23,7 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [stepMessage, setStepMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [autoDetected, setAutoDetected] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -31,6 +32,7 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
       setErrorMessage("");
       setFile(null);
       setStepMessage("");
+      setAutoDetected(null);
     }
   }, [isOpen]);
 
@@ -38,8 +40,34 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
+      const selected = e.target.files[0];
+      setFile(selected);
       setErrorMessage("");
+
+      const fn = selected.name.toLowerCase();
+      let detected = "";
+      if (fn.includes("forensic") || fn.includes("log") || fn.includes("extraction") || fn.includes("cyber")) {
+        detected = "Forensic Report";
+      } else if (fn.includes("investigation") || fn.includes("report")) {
+        detected = "Investigation Report";
+      } else if (fn.includes("affidavit") || fn.includes("deposition")) {
+        detected = "Affidavit";
+      } else if (fn.includes("transcript") || fn.includes("interrogation") || fn.includes("statement") || fn.includes("alibi")) {
+        detected = "Witness Statement";
+      } else if (fn.includes("fir") || fn.includes("complaint")) {
+        detected = "FIR";
+      } else if (fn.includes("court") || fn.includes("order") || fn.includes("bail")) {
+        detected = "Court Order";
+      } else if (fn.includes("charge") || fn.includes("sheet")) {
+        detected = "Charge Sheet";
+      }
+
+      if (detected) {
+        setDocumentType(detected);
+        setAutoDetected(detected);
+      } else {
+        setAutoDetected(null);
+      }
     }
   };
 
@@ -208,21 +236,33 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
-                Document Type
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                  Document Type
+                </label>
+                {autoDetected && (
+                  <span className="text-[10px] font-medium text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                    Auto-classified
+                  </span>
+                )}
+              </div>
               <select
                 value={documentType}
-                onChange={(e) => setDocumentType(e.target.value)}
+                onChange={(e) => {
+                  setDocumentType(e.target.value);
+                  setAutoDetected(null);
+                }}
                 disabled={isSubmitting}
                 className="w-full border rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-black"
               >
                 <option value="FIR">FIR (First Information Report)</option>
                 <option value="Investigation Report">Investigation Report</option>
                 <option value="Forensic Report">Forensic Report</option>
+                <option value="Witness Statement">Witness Statement / Deposition</option>
+                <option value="Affidavit">Affidavit</option>
+                <option value="Alibi Statement">Alibi Statement</option>
                 <option value="Charge Sheet">Charge Sheet</option>
                 <option value="Court Order">Court Order</option>
-                <option value="Affidavit">Affidavit</option>
                 <option value="Evidence Document">Evidence Document</option>
               </select>
             </div>

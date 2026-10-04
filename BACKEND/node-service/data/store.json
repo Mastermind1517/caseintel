@@ -37,7 +37,9 @@
       "status": "Processed",
       "confidence": 96,
       "uploadedAt": "2026-08-15T10:51:00Z",
-      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      "sha256": "ff708d045a9c7a874df33240693d5ffa2b259465a86094adbf5046e800d00db0",
+      "vaultEncrypted": true,
+      "fileFormat": "PDF"
     },
     {
       "id": "DOC-002",
@@ -47,17 +49,21 @@
       "status": "Processed",
       "confidence": 91,
       "uploadedAt": "2026-08-15T11:00:00Z",
-      "sha256": "a4b5c67890def123456789abcdef123456789abcdef123456789abcdef123456"
+      "sha256": "92b08a2fe1929609047d8c8e14175e9081082a345e9a923f71bd51e09bbc8bbf",
+      "vaultEncrypted": true,
+      "fileFormat": "PDF"
     },
     {
       "id": "DOC-003",
       "name": "Forensic_Report.pdf",
       "type": "Forensic Report",
       "caseId": "CASE-001",
-      "status": "Processing",
-      "confidence": null,
+      "status": "Processed",
+      "confidence": 97,
       "uploadedAt": "2026-08-15T11:20:00Z",
-      "sha256": "b5c6d7e8f90123456789abcdef123456789abcdef123456789abcdef12345678"
+      "sha256": "dce7f563118e546388a5d828c06ecbefebe590e9a597c845ec95e0b3e4633d3b",
+      "vaultEncrypted": true,
+      "fileFormat": "PDF"
     }
   ],
   "aiAnalysis": {
@@ -154,6 +160,60 @@
       "issues": [
         "Date mismatch with FIR.pdf (12 August vs 14 August)"
       ]
+    },
+    "DOC-003": {
+      "documentId": "DOC-003",
+      "processingStatus": "complete",
+      "processingStages": [
+        {
+          "name": "Document uploaded",
+          "status": "complete"
+        },
+        {
+          "name": "Document classified",
+          "status": "complete"
+        },
+        {
+          "name": "OCR processing",
+          "status": "complete"
+        },
+        {
+          "name": "Entity extraction",
+          "status": "complete"
+        },
+        {
+          "name": "Inconsistency check",
+          "status": "complete"
+        }
+      ],
+      "documentType": "Forensic Report",
+      "language": "English",
+      "ocrConfidence": 97,
+      "summary": "Digital forensic workstation extraction for CASE-001 by Dr. Sunita Rao. Corroborates outbound TLS tunnel and exfiltration command on 12 August 2026.",
+      "extractedText": "CASEINTEL DIGITAL FORENSIC EVIDENCE LOG\nArtifact ID: EVD-SEC-2026-9041\nCase Reference: CASE-001\nPrimary Suspect: Rahul Sharma\nInvestigating Officer: Inspector Rajesh Verma\nForensic Examiner: Dr. Sunita Rao\nIncident Date: 12 August 2026\nPrimary Location: Connaught Place, New Delhi\nOrganization: Apex Global Traders / Cyber Crime Division\nSeized Hardware: Dell Precision 7760 (SN-CYB-8839210-IN)\nIntegrity Verification: PASSED - ZERO BYTE ALTERATION CONFIRMED",
+      "translation": "CASEINTEL DIGITAL FORENSIC EVIDENCE LOG\nArtifact ID: EVD-SEC-2026-9041\nCase Reference: CASE-001\nPrimary Suspect: Rahul Sharma\nInvestigating Officer: Inspector Rajesh Verma\nForensic Examiner: Dr. Sunita Rao\nIncident Date: 12 August 2026\nPrimary Location: Connaught Place, New Delhi\nOrganization: Apex Global Traders / Cyber Crime Division\nSeized Hardware: Dell Precision 7760 (SN-CYB-8839210-IN)\nIntegrity Verification: PASSED - ZERO BYTE ALTERATION CONFIRMED",
+      "entities": {
+        "people": [
+          "Rahul Sharma",
+          "Dr. Sunita Rao",
+          "Inspector Rajesh Verma"
+        ],
+        "locations": [
+          "Connaught Place, New Delhi",
+          "Kolkata"
+        ],
+        "dates": [
+          "12 August 2026"
+        ],
+        "organizations": [
+          "Apex Global Traders",
+          "Cyber Crime Division",
+          "Forensic Science Laboratory"
+        ]
+      },
+      "issues": [
+        "Corroborates FIR date (12 August 2026); contradicts Investigation Report (14 August 2026)"
+      ]
     }
   },
   "verificationIssues": [
@@ -161,9 +221,10 @@
       "id": "ISSUE-001",
       "caseId": "CASE-001",
       "type": "Date Mismatch",
+      "findingType": "DATE_MISMATCH",
       "severity": "high",
       "status": "pending",
-      "description": "The incident date differs between the FIR and Investigation Report.",
+      "description": "The incident date differs between the FIR (12 August 2026) and Investigation Report (14 August 2026).",
       "sourceA": {
         "documentId": "DOC-001",
         "documentName": "FIR.pdf",
@@ -185,12 +246,20 @@
       "id": "EVENT-004",
       "date": "15 August 2026",
       "title": "Inconsistency detected",
-      "description": "AI detected a mismatch in the incident date between FIR.pdf and Investigation_Report.pdf.",
+      "description": "AI detected a mismatch in the incident date between FIR.pdf (12 August 2026) and Investigation_Report.pdf (14 August 2026).",
       "type": "AI Alert",
       "caseId": "CASE-001"
     },
     {
       "id": "EVENT-003",
+      "date": "15 August 2026",
+      "title": "Forensic Report vaulted",
+      "description": "Forensic_Report.pdf was cryptographically sealed in AES-256 envelope and added to CASE-001.",
+      "type": "Document",
+      "caseId": "CASE-001"
+    },
+    {
+      "id": "EVENT-002",
       "date": "14 August 2026",
       "title": "Investigation Report uploaded",
       "description": "Investigation_Report.pdf was added to CASE-001.",
@@ -198,19 +267,11 @@
       "caseId": "CASE-001"
     },
     {
-      "id": "EVENT-002",
-      "date": "12 August 2026",
-      "title": "Incident recorded",
-      "description": "Incident information was recorded in the FIR.",
-      "type": "Incident",
-      "caseId": "CASE-001"
-    },
-    {
       "id": "EVENT-001",
-      "date": "10 August 2026",
-      "title": "Case created",
-      "description": "CASE-001 was created and assigned for investigation.",
-      "type": "Case",
+      "date": "12 August 2026",
+      "title": "FIR Registered",
+      "description": "FIR.pdf sealed into CaseIntel secure vault.",
+      "type": "Document",
       "caseId": "CASE-001"
     }
   ],
@@ -245,6 +306,71 @@
         "id": "date-001",
         "label": "12 August 2026",
         "type": "Date"
+      },
+      {
+        "id": "doc-doc004",
+        "label": "sample_fir.png",
+        "type": "Document"
+      },
+      {
+        "id": "doc-doc005",
+        "label": "sample_investigation_report.png",
+        "type": "Document"
+      },
+      {
+        "id": "doc-doc006",
+        "label": "sample_fir.png",
+        "type": "Document"
+      },
+      {
+        "id": "person-rahulsharma",
+        "label": "Rahul Sharma",
+        "type": "Person"
+      },
+      {
+        "id": "loc-siliguri",
+        "label": "Siliguri",
+        "type": "Location"
+      },
+      {
+        "id": "doc-doc007",
+        "label": "sample_investigation_report.png",
+        "type": "Document"
+      },
+      {
+        "id": "person-rajeshverma",
+        "label": "Rajesh Verma",
+        "type": "Person"
+      },
+      {
+        "id": "doc-doc008",
+        "label": "06_Cyber_Forensic_Extraction_Log.txt",
+        "type": "Document"
+      },
+      {
+        "id": "loc-kolkata",
+        "label": "Kolkata",
+        "type": "Location"
+      },
+      {
+        "id": "doc-doc009",
+        "label": "05_Witness_Interrogation_Transcript.txt",
+        "type": "Document"
+      },
+      {
+        "id": "loc-delhi",
+        "label": "Delhi",
+        "type": "Location"
+      },
+      {
+        "id": "doc-doc010",
+        "label": "sample_fir.png",
+        "type": "Document"
+      },
+      {
+        "id": "doc-doc011",
+        "label": "sample_investigation_report.png",
+        "type": "Document"
       }
     ],
     "edges": [
@@ -277,10 +403,740 @@
         "from": "doc-001",
         "to": "date-001",
         "label": "date"
+      },
+      {
+        "from": "case-004",
+        "to": "doc-doc004",
+        "label": "contains"
+      },
+      {
+        "from": "case-004",
+        "to": "doc-doc005",
+        "label": "contains"
+      },
+      {
+        "from": "case-005",
+        "to": "doc-doc006",
+        "label": "contains"
+      },
+      {
+        "from": "doc-doc006",
+        "to": "person-rahulsharma",
+        "label": "mentions"
+      },
+      {
+        "from": "doc-doc006",
+        "to": "loc-siliguri",
+        "label": "location"
+      },
+      {
+        "from": "case-005",
+        "to": "doc-doc007",
+        "label": "contains"
+      },
+      {
+        "from": "doc-doc007",
+        "to": "person-rajeshverma",
+        "label": "mentions"
+      },
+      {
+        "from": "doc-doc007",
+        "to": "loc-siliguri",
+        "label": "location"
+      },
+      {
+        "from": "case-001",
+        "to": "doc-doc008",
+        "label": "contains"
+      },
+      {
+        "from": "doc-doc008",
+        "to": "person-rajeshverma",
+        "label": "mentions"
+      },
+      {
+        "from": "doc-doc008",
+        "to": "loc-kolkata",
+        "label": "location"
+      },
+      {
+        "from": "case-001",
+        "to": "doc-doc009",
+        "label": "contains"
+      },
+      {
+        "from": "doc-doc009",
+        "to": "person-rajeshverma",
+        "label": "mentions"
+      },
+      {
+        "from": "doc-doc009",
+        "to": "loc-delhi",
+        "label": "location"
+      },
+      {
+        "from": "case-006",
+        "to": "doc-doc010",
+        "label": "contains"
+      },
+      {
+        "from": "doc-doc010",
+        "to": "person-rahulsharma",
+        "label": "mentions"
+      },
+      {
+        "from": "doc-doc010",
+        "to": "loc-siliguri",
+        "label": "location"
+      },
+      {
+        "from": "case-006",
+        "to": "doc-doc011",
+        "label": "contains"
+      },
+      {
+        "from": "doc-doc011",
+        "to": "person-rajeshverma",
+        "label": "mentions"
+      },
+      {
+        "from": "doc-doc011",
+        "to": "loc-siliguri",
+        "label": "location"
       }
     ]
   },
   "auditLogs": [
+    {
+      "id": "LOG-075",
+      "timestamp": "Oct 4, 2026, 7:26 PM",
+      "user": "Investigator",
+      "role": "INVESTIGATOR",
+      "action": "INTEGRITY_VERIFIED",
+      "target": "sample_fir.png (DOC-010)",
+      "result": "Passed (SHA-256 Match)"
+    },
+    {
+      "id": "LOG-074",
+      "timestamp": "Oct 4, 2026, 7:26 PM",
+      "user": "Inspector Rajesh Verma",
+      "role": "INVESTIGATOR",
+      "action": "FINDING_CONFIRMED",
+      "target": "ISSUE-008 -> Source A Confirmed",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-073",
+      "timestamp": "Oct 4, 2026, 7:26 PM",
+      "user": "AI System",
+      "role": "System",
+      "action": "ENTITY_EXTRACTION_COMPLETED",
+      "target": "sample_investigation_report.png",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-072",
+      "timestamp": "Oct 4, 2026, 7:26 PM",
+      "user": "AI System",
+      "role": "System",
+      "action": "OCR_COMPLETED",
+      "target": "sample_investigation_report.png (100% confidence)",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-071",
+      "timestamp": "Oct 4, 2026, 7:26 PM",
+      "user": "AI System",
+      "role": "System",
+      "action": "OCR_STARTED",
+      "target": "sample_investigation_report.png",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-070",
+      "timestamp": "Oct 4, 2026, 7:26 PM",
+      "user": "Inspector Rajesh Verma",
+      "role": "INVESTIGATOR",
+      "action": "VAULT_ENCRYPTED",
+      "target": "DOC-011.enc (AES-256)",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-069",
+      "timestamp": "Oct 4, 2026, 7:26 PM",
+      "user": "Inspector Rajesh Verma",
+      "role": "INVESTIGATOR",
+      "action": "HASH_GENERATED",
+      "target": "SHA-256: 03a8c3af39ffab63...",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-068",
+      "timestamp": "Oct 4, 2026, 7:26 PM",
+      "user": "Inspector Rajesh Verma",
+      "role": "INVESTIGATOR",
+      "action": "DOCUMENT_UPLOADED",
+      "target": "sample_investigation_report.png",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-067",
+      "timestamp": "Oct 4, 2026, 7:26 PM",
+      "user": "AI System",
+      "role": "System",
+      "action": "ENTITY_EXTRACTION_COMPLETED",
+      "target": "sample_fir.png",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-066",
+      "timestamp": "Oct 4, 2026, 7:26 PM",
+      "user": "AI System",
+      "role": "System",
+      "action": "OCR_COMPLETED",
+      "target": "sample_fir.png (100% confidence)",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-065",
+      "timestamp": "Oct 4, 2026, 7:26 PM",
+      "user": "AI System",
+      "role": "System",
+      "action": "OCR_STARTED",
+      "target": "sample_fir.png",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-064",
+      "timestamp": "Oct 4, 2026, 7:26 PM",
+      "user": "Inspector Rajesh Verma",
+      "role": "INVESTIGATOR",
+      "action": "VAULT_ENCRYPTED",
+      "target": "DOC-010.enc (AES-256)",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-063",
+      "timestamp": "Oct 4, 2026, 7:26 PM",
+      "user": "Inspector Rajesh Verma",
+      "role": "INVESTIGATOR",
+      "action": "HASH_GENERATED",
+      "target": "SHA-256: 57b4e0e6c30618be...",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-062",
+      "timestamp": "Oct 4, 2026, 7:26 PM",
+      "user": "Inspector Rajesh Verma",
+      "role": "INVESTIGATOR",
+      "action": "DOCUMENT_UPLOADED",
+      "target": "sample_fir.png",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-061",
+      "timestamp": "Oct 4, 2026, 7:26 PM",
+      "user": "Inspector Rajesh Verma",
+      "role": "INVESTIGATOR",
+      "action": "CASE_CREATED",
+      "target": "CASE-006",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-060",
+      "timestamp": "Oct 4, 2026, 7:26 PM",
+      "user": "Agent Maya Sen",
+      "role": "INVESTIGATOR",
+      "action": "USER_LOGIN",
+      "target": "agent_mutvwgmb",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-059",
+      "timestamp": "Oct 4, 2026, 7:26 PM",
+      "user": "Agent Maya Sen",
+      "role": "INVESTIGATOR",
+      "action": "USER_REGISTERED",
+      "target": "agent_mutvwgmb",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-058",
+      "timestamp": "Oct 4, 2026, 7:26 PM",
+      "user": "Director Sharma",
+      "role": "ADMIN",
+      "action": "USER_LOGIN",
+      "target": "admin",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-057",
+      "timestamp": "Oct 4, 2026, 7:26 PM",
+      "user": "Inspector Rajesh Verma",
+      "role": "INVESTIGATOR",
+      "action": "USER_LOGIN",
+      "target": "investigator",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-056",
+      "timestamp": "Oct 4, 2026, 7:01 PM",
+      "user": "AI System",
+      "role": "System",
+      "action": "ENTITY_EXTRACTION_COMPLETED",
+      "target": "05_Witness_Interrogation_Transcript.txt",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-055",
+      "timestamp": "Oct 4, 2026, 7:01 PM",
+      "user": "AI System",
+      "role": "System",
+      "action": "OCR_COMPLETED",
+      "target": "05_Witness_Interrogation_Transcript.txt (100% confidence)",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-054",
+      "timestamp": "Oct 4, 2026, 7:01 PM",
+      "user": "AI System",
+      "role": "System",
+      "action": "OCR_STARTED",
+      "target": "05_Witness_Interrogation_Transcript.txt",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-053",
+      "timestamp": "Oct 4, 2026, 7:01 PM",
+      "user": "Inspector Rajesh Verma",
+      "role": "INVESTIGATOR",
+      "action": "VAULT_ENCRYPTED",
+      "target": "DOC-009.enc (AES-256)",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-052",
+      "timestamp": "Oct 4, 2026, 7:01 PM",
+      "user": "Inspector Rajesh Verma",
+      "role": "INVESTIGATOR",
+      "action": "HASH_GENERATED",
+      "target": "SHA-256: 87e21a52d7af9d56...",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-051",
+      "timestamp": "Oct 4, 2026, 7:01 PM",
+      "user": "Inspector Rajesh Verma",
+      "role": "INVESTIGATOR",
+      "action": "DOCUMENT_UPLOADED",
+      "target": "05_Witness_Interrogation_Transcript.txt",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-050",
+      "timestamp": "Oct 4, 2026, 7:01 PM",
+      "user": "Inspector Rajesh Verma",
+      "role": "INVESTIGATOR",
+      "action": "USER_LOGIN",
+      "target": "investigator",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-049",
+      "timestamp": "Oct 4, 2026, 6:58 PM",
+      "user": "AI System",
+      "role": "System",
+      "action": "ENTITY_EXTRACTION_COMPLETED",
+      "target": "06_Cyber_Forensic_Extraction_Log.txt",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-048",
+      "timestamp": "Oct 4, 2026, 6:58 PM",
+      "user": "AI System",
+      "role": "System",
+      "action": "OCR_COMPLETED",
+      "target": "06_Cyber_Forensic_Extraction_Log.txt (100% confidence)",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-047",
+      "timestamp": "Oct 4, 2026, 6:58 PM",
+      "user": "AI System",
+      "role": "System",
+      "action": "OCR_STARTED",
+      "target": "06_Cyber_Forensic_Extraction_Log.txt",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-046",
+      "timestamp": "Oct 4, 2026, 6:58 PM",
+      "user": "Inspector Rajesh Verma",
+      "role": "INVESTIGATOR",
+      "action": "VAULT_ENCRYPTED",
+      "target": "DOC-008.enc (AES-256)",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-045",
+      "timestamp": "Oct 4, 2026, 6:58 PM",
+      "user": "Inspector Rajesh Verma",
+      "role": "INVESTIGATOR",
+      "action": "HASH_GENERATED",
+      "target": "SHA-256: e307d8f819e007f4...",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-044",
+      "timestamp": "Oct 4, 2026, 6:58 PM",
+      "user": "Inspector Rajesh Verma",
+      "role": "INVESTIGATOR",
+      "action": "DOCUMENT_UPLOADED",
+      "target": "06_Cyber_Forensic_Extraction_Log.txt",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-043",
+      "timestamp": "Oct 4, 2026, 6:58 PM",
+      "user": "Inspector Rajesh Verma",
+      "role": "INVESTIGATOR",
+      "action": "USER_LOGIN",
+      "target": "investigator",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-042",
+      "timestamp": "Oct 4, 2026, 6:56 PM",
+      "user": "Investigator",
+      "role": "INVESTIGATOR",
+      "action": "INTEGRITY_VERIFIED",
+      "target": "sample_fir.png (DOC-006)",
+      "result": "Passed (SHA-256 Match)"
+    },
+    {
+      "id": "LOG-041",
+      "timestamp": "Oct 4, 2026, 6:56 PM",
+      "user": "Inspector Rajesh Verma",
+      "role": "INVESTIGATOR",
+      "action": "FINDING_CONFIRMED",
+      "target": "ISSUE-002 -> Source A Confirmed",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-040",
+      "timestamp": "Oct 4, 2026, 6:56 PM",
+      "user": "AI System",
+      "role": "System",
+      "action": "ENTITY_EXTRACTION_COMPLETED",
+      "target": "sample_investigation_report.png",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-039",
+      "timestamp": "Oct 4, 2026, 6:56 PM",
+      "user": "AI System",
+      "role": "System",
+      "action": "OCR_COMPLETED",
+      "target": "sample_investigation_report.png (1% confidence)",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-038",
+      "timestamp": "Oct 4, 2026, 6:56 PM",
+      "user": "AI System",
+      "role": "System",
+      "action": "OCR_STARTED",
+      "target": "sample_investigation_report.png",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-037",
+      "timestamp": "Oct 4, 2026, 6:56 PM",
+      "user": "Inspector Rajesh Verma",
+      "role": "INVESTIGATOR",
+      "action": "VAULT_ENCRYPTED",
+      "target": "DOC-007.enc (AES-256)",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-036",
+      "timestamp": "Oct 4, 2026, 6:56 PM",
+      "user": "Inspector Rajesh Verma",
+      "role": "INVESTIGATOR",
+      "action": "HASH_GENERATED",
+      "target": "SHA-256: 03a8c3af39ffab63...",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-035",
+      "timestamp": "Oct 4, 2026, 6:56 PM",
+      "user": "Inspector Rajesh Verma",
+      "role": "INVESTIGATOR",
+      "action": "DOCUMENT_UPLOADED",
+      "target": "sample_investigation_report.png",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-034",
+      "timestamp": "Oct 4, 2026, 6:55 PM",
+      "user": "AI System",
+      "role": "System",
+      "action": "ENTITY_EXTRACTION_COMPLETED",
+      "target": "sample_fir.png",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-033",
+      "timestamp": "Oct 4, 2026, 6:55 PM",
+      "user": "AI System",
+      "role": "System",
+      "action": "OCR_COMPLETED",
+      "target": "sample_fir.png (1% confidence)",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-032",
+      "timestamp": "Oct 4, 2026, 6:55 PM",
+      "user": "AI System",
+      "role": "System",
+      "action": "OCR_STARTED",
+      "target": "sample_fir.png",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-031",
+      "timestamp": "Oct 4, 2026, 6:55 PM",
+      "user": "Inspector Rajesh Verma",
+      "role": "INVESTIGATOR",
+      "action": "VAULT_ENCRYPTED",
+      "target": "DOC-006.enc (AES-256)",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-030",
+      "timestamp": "Oct 4, 2026, 6:55 PM",
+      "user": "Inspector Rajesh Verma",
+      "role": "INVESTIGATOR",
+      "action": "HASH_GENERATED",
+      "target": "SHA-256: 57b4e0e6c30618be...",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-029",
+      "timestamp": "Oct 4, 2026, 6:55 PM",
+      "user": "Inspector Rajesh Verma",
+      "role": "INVESTIGATOR",
+      "action": "DOCUMENT_UPLOADED",
+      "target": "sample_fir.png",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-028",
+      "timestamp": "Oct 4, 2026, 6:55 PM",
+      "user": "Inspector Rajesh Verma",
+      "role": "INVESTIGATOR",
+      "action": "CASE_CREATED",
+      "target": "CASE-005",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-027",
+      "timestamp": "Oct 4, 2026, 6:55 PM",
+      "user": "Agent Maya Sen",
+      "role": "INVESTIGATOR",
+      "action": "USER_LOGIN",
+      "target": "agent_mutut3oz",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-026",
+      "timestamp": "Oct 4, 2026, 6:55 PM",
+      "user": "Agent Maya Sen",
+      "role": "INVESTIGATOR",
+      "action": "USER_REGISTERED",
+      "target": "agent_mutut3oz",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-025",
+      "timestamp": "Oct 4, 2026, 6:55 PM",
+      "user": "Director Sharma",
+      "role": "ADMIN",
+      "action": "USER_LOGIN",
+      "target": "admin",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-024",
+      "timestamp": "Oct 4, 2026, 6:55 PM",
+      "user": "Inspector Rajesh Verma",
+      "role": "INVESTIGATOR",
+      "action": "USER_LOGIN",
+      "target": "investigator",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-023",
+      "timestamp": "Oct 4, 2026, 6:53 PM",
+      "user": "Investigator",
+      "role": "INVESTIGATOR",
+      "action": "INTEGRITY_VERIFIED",
+      "target": "sample_fir.png (DOC-004)",
+      "result": "Passed (SHA-256 Match)"
+    },
+    {
+      "id": "LOG-022",
+      "timestamp": "Oct 4, 2026, 6:53 PM",
+      "user": "AI System",
+      "role": "System",
+      "action": "ENTITY_EXTRACTION_COMPLETED",
+      "target": "sample_investigation_report.png",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-021",
+      "timestamp": "Oct 4, 2026, 6:53 PM",
+      "user": "AI System",
+      "role": "System",
+      "action": "OCR_COMPLETED",
+      "target": "sample_investigation_report.png (88% confidence)",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-020",
+      "timestamp": "Oct 4, 2026, 6:53 PM",
+      "user": "AI System",
+      "role": "System",
+      "action": "OCR_STARTED",
+      "target": "sample_investigation_report.png",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-019",
+      "timestamp": "Oct 4, 2026, 6:53 PM",
+      "user": "Inspector Rajesh Verma",
+      "role": "INVESTIGATOR",
+      "action": "VAULT_ENCRYPTED",
+      "target": "DOC-005.enc (AES-256)",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-018",
+      "timestamp": "Oct 4, 2026, 6:53 PM",
+      "user": "Inspector Rajesh Verma",
+      "role": "INVESTIGATOR",
+      "action": "HASH_GENERATED",
+      "target": "SHA-256: 03a8c3af39ffab63...",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-017",
+      "timestamp": "Oct 4, 2026, 6:53 PM",
+      "user": "Inspector Rajesh Verma",
+      "role": "INVESTIGATOR",
+      "action": "DOCUMENT_UPLOADED",
+      "target": "sample_investigation_report.png",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-016",
+      "timestamp": "Oct 4, 2026, 6:53 PM",
+      "user": "AI System",
+      "role": "System",
+      "action": "ENTITY_EXTRACTION_COMPLETED",
+      "target": "sample_fir.png",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-015",
+      "timestamp": "Oct 4, 2026, 6:53 PM",
+      "user": "AI System",
+      "role": "System",
+      "action": "OCR_COMPLETED",
+      "target": "sample_fir.png (88% confidence)",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-014",
+      "timestamp": "Oct 4, 2026, 6:53 PM",
+      "user": "AI System",
+      "role": "System",
+      "action": "OCR_STARTED",
+      "target": "sample_fir.png",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-013",
+      "timestamp": "Oct 4, 2026, 6:53 PM",
+      "user": "Inspector Rajesh Verma",
+      "role": "INVESTIGATOR",
+      "action": "VAULT_ENCRYPTED",
+      "target": "DOC-004.enc (AES-256)",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-012",
+      "timestamp": "Oct 4, 2026, 6:53 PM",
+      "user": "Inspector Rajesh Verma",
+      "role": "INVESTIGATOR",
+      "action": "HASH_GENERATED",
+      "target": "SHA-256: 57b4e0e6c30618be...",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-011",
+      "timestamp": "Oct 4, 2026, 6:53 PM",
+      "user": "Inspector Rajesh Verma",
+      "role": "INVESTIGATOR",
+      "action": "DOCUMENT_UPLOADED",
+      "target": "sample_fir.png",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-010",
+      "timestamp": "Oct 4, 2026, 6:53 PM",
+      "user": "Inspector Rajesh Verma",
+      "role": "INVESTIGATOR",
+      "action": "CASE_CREATED",
+      "target": "CASE-004",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-009",
+      "timestamp": "Oct 4, 2026, 6:53 PM",
+      "user": "Agent Maya Sen",
+      "role": "INVESTIGATOR",
+      "action": "USER_LOGIN",
+      "target": "agent_mutupyh6",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-008",
+      "timestamp": "Oct 4, 2026, 6:53 PM",
+      "user": "Agent Maya Sen",
+      "role": "INVESTIGATOR",
+      "action": "USER_REGISTERED",
+      "target": "agent_mutupyh6",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-007",
+      "timestamp": "Oct 4, 2026, 6:53 PM",
+      "user": "Director Sharma",
+      "role": "ADMIN",
+      "action": "USER_LOGIN",
+      "target": "admin",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-006",
+      "timestamp": "Oct 4, 2026, 6:53 PM",
+      "user": "Inspector Rajesh Verma",
+      "role": "INVESTIGATOR",
+      "action": "USER_LOGIN",
+      "target": "investigator",
+      "result": "Success"
+    },
     {
       "id": "LOG-001",
       "timestamp": "15 Aug 2026, 10:42 AM",

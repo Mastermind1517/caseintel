@@ -134,7 +134,7 @@ export default function DocumentViewer() {
                 Case: {doc?.caseId || "CASE-001"}
               </Link>
               <span>·</span>
-              <span>Type: <strong className="text-slate-700 font-semibold">{aiAnalysis.documentType}</strong></span>
+              <span>Type: <strong className="text-slate-700 font-semibold">{doc?.type || aiAnalysis.documentType}</strong></span>
               <span>·</span>
               <span>Lang: <strong className="text-slate-700 font-semibold">{aiAnalysis.language || "English"}</strong></span>
             </div>
@@ -225,7 +225,7 @@ export default function DocumentViewer() {
                   <div className="max-w-md w-full bg-white border border-slate-200 rounded-lg p-5 shadow-xs text-left space-y-3">
                     <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
                       <span className="text-xs font-bold text-slate-900 uppercase tracking-wide">
-                        {aiAnalysis.documentType}
+                        {doc?.type || aiAnalysis.documentType}
                       </span>
                       <span className="text-[10px] font-mono bg-slate-100 px-2 py-0.5 rounded text-slate-600 font-semibold">
                         SEALED
