@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft,
   FileText,
@@ -22,14 +22,17 @@ import {
   FileCheck2,
   ArrowRight,
   Fingerprint,
+  Trash2,
+  X,
 } from "lucide-react";
 
 import { getAIAnalysis } from "@/services/aiService";
-import { getDocumentById, getDocumentDownloadUrl } from "@/services/documentsService";
+import { getDocumentById, getDocumentDownloadUrl, deleteDocument } from "@/services/documentsService";
 import { API_BASE_URL } from "@/config/api";
 
 export default function DocumentViewer() {
   const params = useParams();
+  const router = useRouter();
   const documentId = params.documentId as string;
 
   const [doc, setDoc] = useState<any>(null);
@@ -38,6 +41,9 @@ export default function DocumentViewer() {
   const [loading, setLoading] = useState(true);
   const [verifying, setVerifying] = useState(false);
   const [integrityResult, setIntegrityResult] = useState<any>(null);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleVerifyIntegrity = async () => {
     setVerifying(true);
@@ -56,6 +62,11 @@ export default function DocumentViewer() {
   };
 
   useEffect(() => {
+    try {
+      const u = localStorage.getItem("caseintel_user");
+      if (u) setCurrentUser(JSON.parse(u));
+    } catch {}
+
     async function loadData() {
       setLoading(true);
       const [docData, aiData] = await Promise.all([
@@ -71,6 +82,19 @@ export default function DocumentViewer() {
       loadData();
     }
   }, [documentId]);
+
+  const canDelete = ['ADMIN', 'INVESTIGATOR'].includes((currentUser?.role || '').toUpperCase());
+
+  const handleDeleteDocument = async () => {
+    setIsDeleting(true);
+    try {
+      await deleteDocument(documentId);
+      router.push('/documents');
+    } catch (err: any) {
+      alert(err.message || 'Failed to delete document');
+      setIsDeleting(false);
+    }
+  };
 
   if (loading || !aiAnalysis) {
     return (
@@ -154,6 +178,16 @@ export default function DocumentViewer() {
             <Download size={13} />
             Download Original
           </a>
+          {canDelete && (
+            <button
+              onClick={() => setIsDeleteModalOpen(true)}
+              title="Purge Document from Vault"
+              className="flex items-center gap-1.5 border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer"
+            >
+              <Trash2 size={13} />
+              Purge Document
+            </button>
+          )}
         </div>
       </div>
 
@@ -477,6 +511,68 @@ export default function DocumentViewer() {
           </div>
         </section>
       </div>
+
+      {/* Delete Document Confirmation Modal */}
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-red-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between bg-red-50/50">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-red-100 text-red-700 rounded-lg">
+                  <AlertTriangle size={18} />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-gray-900">Purge Vault Document</h2>
+                  <p className="text-xs text-red-600 font-mono font-medium">{documentId}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <p className="text-sm text-gray-600 leading-relaxed">
+                Are you sure you want to permanently purge <strong className="text-gray-900">"{doc?.name || documentId}"</strong>?
+              </p>
+              <div className="p-3.5 bg-red-50 rounded-xl border border-red-200/80 text-xs text-red-800 space-y-1.5">
+                <p className="font-semibold flex items-center gap-1.5">
+                  <AlertTriangle size={14} className="shrink-0" />
+                  Irreversible Security Purge:
+                </p>
+                <ul className="list-disc list-inside space-y-0.5 text-[11px] text-red-700">
+                  <li>The AES-256 encrypted payload in the vault will be destroyed</li>
+                  <li>Extracted OCR text, entities, and cross-source checks will be deleted</li>
+                  <li>Audit trail will record permanent document purge</li>
+                </ul>
+              </div>
+
+              <div className="pt-2 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  disabled={isDeleting}
+                  onClick={() => setIsDeleteModalOpen(false)}
+                  className="px-4 py-2 text-xs font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={isDeleting}
+                  onClick={handleDeleteDocument}
+                  className="px-4 py-2 text-xs bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                >
+                  <Trash2 size={13} />
+                  {isDeleting ? "Purging Document..." : "Confirm Purge"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

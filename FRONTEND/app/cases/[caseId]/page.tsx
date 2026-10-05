@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft,
   FileText,
@@ -14,12 +14,15 @@ import {
   Upload,
   AlertTriangle,
   CheckCircle,
+  CheckCircle2,
   Download,
   Lock,
+  Trash2,
+  X,
 } from "lucide-react";
 
-import { getCaseById } from "@/services/casesService";
-import { getDocuments, getDocumentDownloadUrl } from "@/services/documentsService";
+import { getCaseById, deleteCase } from "@/services/casesService";
+import { getDocuments, getDocumentDownloadUrl, deleteDocument } from "@/services/documentsService";
 import { getVerificationIssues, resolveVerificationIssue } from "@/services/verificationService";
 import { getTimeline } from "@/services/timelineService";
 import { getAuditLogs } from "@/services/auditService";
@@ -35,6 +38,7 @@ const tabs = [
 
 export default function CaseWorkspace() {
   const params = useParams();
+  const router = useRouter();
   const caseId = (params.caseId as string) || "CASE-001";
 
   const [caseData, setCaseData] = useState<any>(null);
@@ -45,6 +49,12 @@ export default function CaseWorkspace() {
   const [activeTab, setActiveTab] = useState("documents");
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [isDeleteCaseOpen, setIsDeleteCaseOpen] = useState(false);
+  const [docToDelete, setDocToDelete] = useState<any | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [toast, setToast] = useState("");
 
   const loadCaseDetails = async () => {
     setLoading(true);
@@ -75,7 +85,41 @@ export default function CaseWorkspace() {
 
   useEffect(() => {
     loadCaseDetails();
+    try {
+      const u = localStorage.getItem("caseintel_user");
+      if (u) setCurrentUser(JSON.parse(u));
+    } catch {}
   }, [caseId]);
+
+  const isAdmin = (currentUser?.role || "").toUpperCase() === "ADMIN";
+  const canDeleteDoc = isAdmin || (currentUser?.role || "").toUpperCase() === "INVESTIGATOR";
+
+  const handleDeleteCase = async () => {
+    setIsDeleting(true);
+    try {
+      await deleteCase(caseId);
+      router.push("/cases");
+    } catch (err: any) {
+      alert(err.message || "Failed to delete case");
+      setIsDeleting(false);
+    }
+  };
+
+  const handleDeleteDoc = async () => {
+    if (!docToDelete) return;
+    setIsDeleting(true);
+    try {
+      await deleteDocument(docToDelete.id);
+      setToast(`Document "${docToDelete.name}" (${docToDelete.id}) permanently purged.`);
+      setTimeout(() => setToast(""), 4000);
+      setDocToDelete(null);
+      loadCaseDetails();
+    } catch (err: any) {
+      alert(err.message || "Failed to delete document");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   const handleResolveIssue = async (issueId: string, decision: string) => {
     const updated = await resolveVerificationIssue(issueId, decision);
@@ -99,6 +143,19 @@ export default function CaseWorkspace() {
 
   return (
     <main className="p-4 sm:p-6 md:p-8 max-w-7xl mx-auto space-y-6">
+      {/* Toast Notification */}
+      {toast && (
+        <div className="p-4 rounded-xl bg-green-50 border border-green-200 text-green-800 text-sm flex items-center justify-between shadow-xs">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 size={18} className="text-green-600" />
+            <span>{toast}</span>
+          </div>
+          <button onClick={() => setToast("")} className="text-xs text-green-600 hover:underline">
+            Dismiss
+          </button>
+        </div>
+      )}
+
       {/* Back */}
       <Link
         href="/cases"
@@ -130,7 +187,7 @@ export default function CaseWorkspace() {
             </p>
           </div>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex flex-wrap items-center gap-2.5">
             <button
               onClick={() => setIsUploadOpen(true)}
               className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-3.5 py-2 rounded-lg text-xs font-medium transition shadow-xs cursor-pointer"
@@ -145,6 +202,16 @@ export default function CaseWorkspace() {
               <Network size={14} />
               Entity Graph
             </Link>
+            {isAdmin && (
+              <button
+                onClick={() => setIsDeleteCaseOpen(true)}
+                title="Permanently Delete Case (Admin Only)"
+                className="flex items-center gap-1.5 border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 px-3 py-2 rounded-lg text-xs font-medium transition cursor-pointer"
+              >
+                <Trash2 size={13} />
+                Delete Case
+              </button>
+            )}
           </div>
         </div>
 
@@ -249,6 +316,15 @@ export default function CaseWorkspace() {
                         >
                           <Download size={15} />
                         </a>
+                        {canDeleteDoc && (
+                          <button
+                            onClick={() => setDocToDelete(doc)}
+                            title="Purge Document from Vault"
+                            className="p-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 transition cursor-pointer"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -463,6 +539,130 @@ export default function CaseWorkspace() {
         onClose={() => setIsUploadOpen(false)}
         onSuccess={() => loadCaseDetails()}
       />
+
+      {/* Delete Case Confirmation Modal */}
+      {isDeleteCaseOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-red-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between bg-red-50/50">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-red-100 text-red-700 rounded-lg">
+                  <AlertTriangle size={18} />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-gray-900">Purge Investigation Case</h2>
+                  <p className="text-xs text-red-600 font-mono font-medium">{caseId}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsDeleteCaseOpen(false)}
+                className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <p className="text-sm text-gray-600 leading-relaxed">
+                Are you sure you want to permanently delete case <strong className="text-gray-900">"{caseData?.name}"</strong>?
+              </p>
+              <div className="p-3.5 bg-red-50 rounded-xl border border-red-200/80 text-xs text-red-800 space-y-1.5">
+                <p className="font-semibold flex items-center gap-1.5">
+                  <AlertTriangle size={14} className="shrink-0" />
+                  Irreversible Cascade Deletion:
+                </p>
+                <ul className="list-disc list-inside space-y-0.5 text-[11px] text-red-700">
+                  <li>All associated vault documents (.enc files) will be destroyed</li>
+                  <li>Extracted AI analysis, OCR, and entities will be purged</li>
+                  <li>Verification issues and audit timeline entries will be cleared</li>
+                </ul>
+              </div>
+
+              <div className="pt-2 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  disabled={isDeleting}
+                  onClick={() => setIsDeleteCaseOpen(false)}
+                  className="px-4 py-2 text-xs font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={isDeleting}
+                  onClick={handleDeleteCase}
+                  className="px-4 py-2 text-xs bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                >
+                  <Trash2 size={13} />
+                  {isDeleting ? "Purging Case..." : "Confirm Permanent Deletion"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Document Confirmation Modal */}
+      {docToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-red-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between bg-red-50/50">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-red-100 text-red-700 rounded-lg">
+                  <AlertTriangle size={18} />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-gray-900">Purge Vault Document</h2>
+                  <p className="text-xs text-red-600 font-mono font-medium">{docToDelete.id}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setDocToDelete(null)}
+                className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <p className="text-sm text-gray-600 leading-relaxed">
+                Permanently purge <strong className="text-gray-900">"{docToDelete.name}"</strong>?
+              </p>
+              <div className="p-3.5 bg-red-50 rounded-xl border border-red-200/80 text-xs text-red-800 space-y-1.5">
+                <p className="font-semibold flex items-center gap-1.5">
+                  <AlertTriangle size={14} className="shrink-0" />
+                  Irreversible Security Purge:
+                </p>
+                <ul className="list-disc list-inside space-y-0.5 text-[11px] text-red-700">
+                  <li>The AES-256 encrypted payload in the vault will be destroyed</li>
+                  <li>Extracted OCR text, entities, and cross-source checks will be deleted</li>
+                  <li>Audit trail will record permanent document purge</li>
+                </ul>
+              </div>
+
+              <div className="pt-2 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  disabled={isDeleting}
+                  onClick={() => setDocToDelete(null)}
+                  className="px-4 py-2 text-xs font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={isDeleting}
+                  onClick={handleDeleteDoc}
+                  className="px-4 py-2 text-xs bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                >
+                  <Trash2 size={13} />
+                  {isDeleting ? "Purging Document..." : "Confirm Purge"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

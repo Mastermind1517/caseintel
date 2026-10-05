@@ -7,7 +7,7 @@ const path = require('path');
 const cors = require('cors');
 const { PassThrough } = require('stream');
 const { encryptStream, decryptStream, decryptFileToBuffer } = require('./encryptionUtils');
-const { USERS, authenticateUser, registerUser, requireAuth, requireRole } = require('./middleware/auth');
+const { USERS, loadUsers, authenticateUser, registerUser, requireAuth, requireRole } = require('./middleware/auth');
 const { loginLimiter, uploadLimiter, apiLimiter } = require('./middleware/rateLimiter');
 
 const app = express();
@@ -564,14 +564,36 @@ app.post('/api/v1/cases', requireAuth, requireRole(['ADMIN', 'INVESTIGATOR']), (
 // Admin-only: Case deletion (demonstrating role-based enforcement)
 app.delete('/api/v1/cases/:id', requireAuth, requireRole(['ADMIN']), (req, res) => {
   const db = readDb();
-  const index = db.cases.findIndex(c => c.id === req.params.id);
+  const caseId = req.params.id;
+  const index = db.cases.findIndex(c => c.id === caseId);
   if (index === -1) return res.status(404).json({ success: false, error: "Case not found" });
 
   const removed = db.cases.splice(index, 1)[0];
-  writeDb(db);
-  addAuditLog("CASE_DELETED", req.params.id, "Success", req.user?.name || req.user?.username || "Admin", "ADMIN");
 
-  res.json({ success: true, message: `Case ${req.params.id} purged by Administrator.`, deletedCase: removed });
+  // Cascade delete associated documents and clean up vault
+  const docsToRemove = db.documents.filter(d => d.caseId === caseId);
+  docsToRemove.forEach(doc => {
+    delete db.aiAnalysis[doc.id];
+    const vPath = path.join(SECURE_VAULT_DIR, `${doc.id}.enc`);
+    if (fs.existsSync(vPath)) {
+      try { fs.unlinkSync(vPath); } catch (e) {}
+    }
+  });
+  db.documents = db.documents.filter(d => d.caseId !== caseId);
+
+  // Cascade delete verification issues and timeline entries
+  db.verificationIssues = db.verificationIssues.filter(i => i.caseId !== caseId);
+  db.timeline = db.timeline.filter(t => t.caseId !== caseId);
+
+  writeDb(db);
+  const actorUser = req.user?.name || req.user?.username || "Admin";
+  addAuditLog("CASE_DELETED", `${caseId} (${removed.name})`, "Success", actorUser, "ADMIN");
+
+  res.json({
+    success: true,
+    message: `Case ${caseId} (${removed.name}) and all associated evidence dossiers purged by Administrator.`,
+    deletedCase: removed
+  });
 });
 
 // ---------------------------------------------------------
@@ -591,6 +613,56 @@ app.get('/api/v1/documents/:id', validateDocumentId, (req, res) => {
   res.json({
     ...doc,
     aiAnalysis: analysis,
+  });
+});
+
+// Delete Document (Investigators and Admins)
+app.delete('/api/v1/documents/:id', requireAuth, requireRole(['ADMIN', 'INVESTIGATOR']), validateDocumentId, async (req, res) => {
+  const docId = req.params.id;
+  const db = readDb();
+  const index = db.documents.findIndex(d => d.id === docId);
+  if (index === -1) return res.status(404).json({ success: false, error: "Document not found" });
+
+  const [removedDoc] = db.documents.splice(index, 1);
+
+  // Remove AI analysis
+  delete db.aiAnalysis[docId];
+
+  // Remove verification issues referencing this document
+  db.verificationIssues = db.verificationIssues.filter(
+    issue => issue.sourceA?.documentId !== docId && issue.sourceB?.documentId !== docId
+  );
+
+  // Remove vault file if exists
+  const vaultPath = path.join(SECURE_VAULT_DIR, `${docId}.enc`);
+  if (fs.existsSync(vaultPath)) {
+    try {
+      fs.unlinkSync(vaultPath);
+    } catch (err) {
+      console.warn("Could not delete vault file:", err.message);
+    }
+  }
+
+  // Update timeline
+  const actorUser = req.user?.name || req.user?.username || "Officer";
+  const actorRole = req.user?.role || "INVESTIGATOR";
+
+  db.timeline.unshift({
+    id: `EVENT-${String(db.timeline.length + 1).padStart(3, '0')}`,
+    date: new Date().toLocaleDateString("en-GB", { day: 'numeric', month: 'long', year: 'numeric' }),
+    title: "Document Purged",
+    description: `${removedDoc.name} (${docId}) was permanently removed by ${actorUser}.`,
+    type: "Document",
+    caseId: removedDoc.caseId,
+  });
+
+  writeDb(db);
+  addAuditLog("DOCUMENT_DELETED", `${removedDoc.name} (${docId})`, "Success", actorUser, actorRole);
+
+  res.json({
+    success: true,
+    message: `Document ${docId} (${removedDoc.name}) purged successfully from vault.`,
+    deletedDocument: removedDoc,
   });
 });
 
@@ -1245,11 +1317,153 @@ app.get('/api/v1/timeline', (req, res) => {
 });
 
 // ---------------------------------------------------------
-// CONNECTIONS API
+// CONNECTIONS KNOWLEDGE GRAPH GENERATOR
 // ---------------------------------------------------------
+function generateConnectionsGraph(db, filterCaseId = null) {
+  const nodes = [];
+  const edges = [];
+  const addedNodeIds = new Set();
+
+  function addNode(node) {
+    if (!addedNodeIds.has(node.id)) {
+      addedNodeIds.add(node.id);
+      nodes.push(node);
+    }
+  }
+
+  function addEdge(edge) {
+    if (!edges.some(e => e.from === edge.from && e.to === edge.to && e.label === edge.label)) {
+      edges.push(edge);
+    }
+  }
+
+  const targetCases = (filterCaseId && filterCaseId !== 'ALL')
+    ? db.cases.filter(c => c.id.toLowerCase() === filterCaseId.toLowerCase())
+    : db.cases;
+
+  const validCaseIds = new Set(targetCases.map(c => c.id));
+
+  // 1. Case Nodes
+  targetCases.forEach(c => {
+    addNode({
+      id: `case-${c.id.toLowerCase().replace(/[^a-z0-9]/g, '')}`,
+      label: `${c.id} - ${c.name}`,
+      type: "Case",
+      caseId: c.id,
+      department: c.department,
+      priority: c.priority,
+    });
+  });
+
+  // 2. Documents & Extracted Entities
+  db.documents.forEach(doc => {
+    if (!validCaseIds.has(doc.caseId)) return;
+
+    const caseNodeId = `case-${doc.caseId.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+    const docNodeId = `doc-${doc.id.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+
+    addNode({
+      id: docNodeId,
+      label: doc.name,
+      type: "Document",
+      docType: doc.type,
+      caseId: doc.caseId,
+      status: doc.status,
+    });
+
+    addEdge({
+      from: caseNodeId,
+      to: docNodeId,
+      label: "contains",
+    });
+
+    const analysis = db.aiAnalysis[doc.id];
+    if (analysis && analysis.entities) {
+      // People
+      (analysis.entities.people || []).forEach(p => {
+        const cleanP = (p || '').split('\n')[0].trim();
+        if (cleanP.length >= 2) {
+          const personId = `person-${cleanP.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+          addNode({
+            id: personId,
+            label: cleanP,
+            type: "Person",
+            caseId: doc.caseId,
+          });
+          addEdge({
+            from: docNodeId,
+            to: personId,
+            label: "mentions",
+          });
+        }
+      });
+
+      // Locations
+      (analysis.entities.locations || []).forEach(loc => {
+        const cleanLoc = (loc || '').split('\n')[0].trim();
+        if (cleanLoc.length >= 2) {
+          const locId = `loc-${cleanLoc.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+          addNode({
+            id: locId,
+            label: cleanLoc,
+            type: "Location",
+            caseId: doc.caseId,
+          });
+          addEdge({
+            from: docNodeId,
+            to: locId,
+            label: "location",
+          });
+        }
+      });
+
+      // Dates
+      (analysis.entities.dates || []).forEach(d => {
+        const cleanD = (d || '').trim();
+        if (cleanD.length >= 3) {
+          const dateId = `date-${cleanD.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+          addNode({
+            id: dateId,
+            label: cleanD,
+            type: "Date",
+            caseId: doc.caseId,
+          });
+          addEdge({
+            from: docNodeId,
+            to: dateId,
+            label: "date",
+          });
+        }
+      });
+
+      // Organizations
+      (analysis.entities.organizations || []).forEach(org => {
+        const cleanOrg = (org || '').trim();
+        if (cleanOrg.length >= 3) {
+          const orgId = `org-${cleanOrg.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+          addNode({
+            id: orgId,
+            label: cleanOrg,
+            type: "Organization",
+            caseId: doc.caseId,
+          });
+          addEdge({
+            from: docNodeId,
+            to: orgId,
+            label: "organization",
+          });
+        }
+      });
+    }
+  });
+
+  return { nodes, edges };
+}
+
 app.get('/api/v1/connections', (req, res) => {
   const db = readDb();
-  res.json(db.connections);
+  const graph = generateConnectionsGraph(db, req.query.caseId);
+  res.json(graph);
 });
 
 // ---------------------------------------------------------
@@ -1258,6 +1472,30 @@ app.get('/api/v1/connections', (req, res) => {
 app.get('/api/v1/audit', (req, res) => {
   const db = readDb();
   res.json(db.auditLogs);
+});
+
+// ---------------------------------------------------------
+// ADMIN: USERS ROSTER & ACTIVE SESSIONS
+// ---------------------------------------------------------
+app.get('/api/v1/admin/users', requireAuth, requireRole(['ADMIN']), (req, res) => {
+  const users = loadUsers();
+  const safeUsers = users.map(({ passwordHash, ...safe }) => ({
+    ...safe,
+    status: safe.status || "Active",
+    lastLoginAt: safe.lastLoginAt || new Date().toISOString(),
+  }));
+
+  const totalInvestigators = safeUsers.filter(u => u.role === 'INVESTIGATOR').length;
+  const totalAdmins = safeUsers.filter(u => u.role === 'ADMIN').length;
+
+  res.json({
+    success: true,
+    totalUsers: safeUsers.length,
+    totalInvestigators,
+    totalAdmins,
+    activeCount: safeUsers.length,
+    users: safeUsers,
+  });
 });
 
 app.listen(PORT, async () => {

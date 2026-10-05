@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Search, Upload, FileText, Lock, Download, CheckCircle2 } from "lucide-react";
-import { getDocuments, getDocumentDownloadUrl } from "@/services/documentsService";
+import { Search, Upload, FileText, Lock, Download, CheckCircle2, Trash2, AlertTriangle, X } from "lucide-react";
+import { getDocuments, getDocumentDownloadUrl, deleteDocument } from "@/services/documentsService";
 import UploadModal from "@/components/ui/UploadModal";
 
 export default function DocumentsPage() {
@@ -11,6 +11,9 @@ export default function DocumentsPage() {
   const [search, setSearch] = useState("");
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [notification, setNotification] = useState("");
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [docToDelete, setDocToDelete] = useState<any | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const loadDocuments = async () => {
     const data = await getDocuments();
@@ -19,7 +22,29 @@ export default function DocumentsPage() {
 
   useEffect(() => {
     loadDocuments();
+    try {
+      const u = localStorage.getItem("caseintel_user");
+      if (u) setCurrentUser(JSON.parse(u));
+    } catch {}
   }, []);
+
+  const canDelete = ['ADMIN', 'INVESTIGATOR'].includes((currentUser?.role || '').toUpperCase());
+
+  const handleDeleteDocument = async () => {
+    if (!docToDelete) return;
+    setIsDeleting(true);
+    try {
+      await deleteDocument(docToDelete.id);
+      setNotification(`Document "${docToDelete.name}" (${docToDelete.id}) permanently purged from vault.`);
+      setTimeout(() => setNotification(""), 5000);
+      setDocToDelete(null);
+      loadDocuments();
+    } catch (err: any) {
+      alert(err.message || "Failed to delete document");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   const handleUploadSuccess = (newDoc: any) => {
     loadDocuments();
@@ -181,6 +206,15 @@ export default function DocumentsPage() {
                     >
                       <Download size={15} />
                     </a>
+                    {canDelete && (
+                      <button
+                        onClick={() => setDocToDelete(doc)}
+                        title="Purge Document from Vault"
+                        className="p-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 transition cursor-pointer"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>
@@ -203,6 +237,68 @@ export default function DocumentsPage() {
         onClose={() => setIsUploadOpen(false)}
         onSuccess={handleUploadSuccess}
       />
+
+      {/* Delete Document Confirmation Modal */}
+      {docToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-red-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between bg-red-50/50">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-red-100 text-red-700 rounded-lg">
+                  <AlertTriangle size={18} />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-gray-900">Purge Vault Document</h2>
+                  <p className="text-xs text-red-600 font-mono font-medium">{docToDelete.id}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setDocToDelete(null)}
+                className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <p className="text-sm text-gray-600 leading-relaxed">
+                Are you sure you want to permanently purge <strong className="text-gray-900">"{docToDelete.name}"</strong>?
+              </p>
+              <div className="p-3.5 bg-red-50 rounded-xl border border-red-200/80 text-xs text-red-800 space-y-1.5">
+                <p className="font-semibold flex items-center gap-1.5">
+                  <AlertTriangle size={14} className="shrink-0" />
+                  Irreversible Security Purge:
+                </p>
+                <ul className="list-disc list-inside space-y-0.5 text-[11px] text-red-700">
+                  <li>The AES-256 encrypted payload in the vault will be destroyed</li>
+                  <li>Extracted OCR text, entities, and cross-source checks will be deleted</li>
+                  <li>Audit trail will record permanent document purge</li>
+                </ul>
+              </div>
+
+              <div className="pt-2 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  disabled={isDeleting}
+                  onClick={() => setDocToDelete(null)}
+                  className="px-4 py-2 text-xs font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={isDeleting}
+                  onClick={handleDeleteDocument}
+                  className="px-4 py-2 text-xs bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                >
+                  <Trash2 size={13} />
+                  {isDeleting ? "Purging Document..." : "Confirm Purge"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

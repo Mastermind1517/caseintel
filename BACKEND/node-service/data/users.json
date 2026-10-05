@@ -6,7 +6,9 @@
     "passwordHash": "3eb3fe66b31e3b4d10fa70b5cad49c7112294af6ae4e476a1c405155d45aa121",
     "name": "Director Sharma",
     "role": "ADMIN",
-    "department": "Special Operations"
+    "department": "Special Operations",
+    "lastLoginAt": "2026-10-05T13:54:47.054Z",
+    "status": "Active"
   },
   {
     "id": "usr-inv-001",
@@ -66,5 +68,35 @@
     "role": "INVESTIGATOR",
     "department": "Special Operations Wing",
     "createdAt": "2026-10-03T05:02:13.731Z"
+  },
+  {
+    "id": "usr-mutupyh8-998b9e",
+    "username": "agent_mutupyh6",
+    "email": "agent_mutupyh6@caseintel.gov",
+    "passwordHash": "ac20fb8d55e216f353f31a258f1c3071c233371d89e91125b5ab322faa7a1c39",
+    "name": "Agent Maya Sen",
+    "role": "INVESTIGATOR",
+    "department": "Special Operations Wing",
+    "createdAt": "2026-10-04T13:23:18.860Z"
+  },
+  {
+    "id": "usr-mutut3p1-a8fa85",
+    "username": "agent_mutut3oz",
+    "email": "agent_mutut3oz@caseintel.gov",
+    "passwordHash": "ac20fb8d55e216f353f31a258f1c3071c233371d89e91125b5ab322faa7a1c39",
+    "name": "Agent Maya Sen",
+    "role": "INVESTIGATOR",
+    "department": "Special Operations Wing",
+    "createdAt": "2026-10-04T13:25:45.589Z"
+  },
+  {
+    "id": "usr-mutvwgmd-8f7fc2",
+    "username": "agent_mutvwgmb",
+    "email": "agent_mutvwgmb@caseintel.gov",
+    "passwordHash": "ac20fb8d55e216f353f31a258f1c3071c233371d89e91125b5ab322faa7a1c39",
+    "name": "Agent Maya Sen",
+    "role": "INVESTIGATOR",
+    "department": "Special Operations Wing",
+    "createdAt": "2026-10-04T13:56:21.925Z"
   }
 ]

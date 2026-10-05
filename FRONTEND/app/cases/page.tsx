@@ -2,13 +2,16 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Plus, Search, Folder, X, CheckCircle2, Shield } from "lucide-react";
-import { getCases, createCase } from "@/services/casesService";
+import { Plus, Search, Folder, X, CheckCircle2, Shield, Trash2, AlertTriangle } from "lucide-react";
+import { getCases, createCase, deleteCase } from "@/services/casesService";
 
 export default function CasesPage() {
   const [cases, setCases] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [caseToDelete, setCaseToDelete] = useState<any | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [newCaseName, setNewCaseName] = useState("");
   const [department, setDepartment] = useState("Cyber Crime");
   const [priority, setPriority] = useState("High");
@@ -22,7 +25,29 @@ export default function CasesPage() {
 
   useEffect(() => {
     loadCases();
+    try {
+      const u = localStorage.getItem("caseintel_user");
+      if (u) setCurrentUser(JSON.parse(u));
+    } catch {}
   }, []);
+
+  const isAdmin = (currentUser?.role || "").toUpperCase() === "ADMIN";
+
+  const handleDeleteCase = async () => {
+    if (!caseToDelete) return;
+    setIsDeleting(true);
+    try {
+      await deleteCase(caseToDelete.id);
+      setToast(`Case "${caseToDelete.name}" (${caseToDelete.id}) permanently purged.`);
+      setTimeout(() => setToast(""), 4000);
+      setCaseToDelete(null);
+      loadCases();
+    } catch (err: any) {
+      alert(err.message || "Failed to delete case");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   const handleCreateCase = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -173,12 +198,23 @@ export default function CasesPage() {
                 </td>
 
                 <td className="px-5 py-4 text-right">
-                  <Link
-                    href={`/cases/${item.id}`}
-                    className="px-3 py-1.5 rounded-lg border text-xs font-medium text-gray-700 hover:bg-gray-100 transition inline-block"
-                  >
-                    Workspace
-                  </Link>
+                  <div className="flex items-center justify-end gap-2">
+                    <Link
+                      href={`/cases/${item.id}`}
+                      className="px-3 py-1.5 rounded-lg border text-xs font-medium text-gray-700 hover:bg-gray-100 transition inline-block"
+                    >
+                      Workspace
+                    </Link>
+                    {isAdmin && (
+                      <button
+                        onClick={() => setCaseToDelete(item)}
+                        title="Delete Case (Admin Only)"
+                        className="p-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 transition cursor-pointer"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}
@@ -279,6 +315,68 @@ export default function CasesPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Case Confirmation Modal */}
+      {caseToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-red-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between bg-red-50/50">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-red-100 text-red-700 rounded-lg">
+                  <AlertTriangle size={18} />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-gray-900">Purge Investigation Case</h2>
+                  <p className="text-xs text-red-600 font-mono font-medium">{caseToDelete.id}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setCaseToDelete(null)}
+                className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <p className="text-sm text-gray-600 leading-relaxed">
+                Are you sure you want to permanently delete <strong className="text-gray-900">"{caseToDelete.name}"</strong>?
+              </p>
+              <div className="p-3.5 bg-red-50 rounded-xl border border-red-200/80 text-xs text-red-800 space-y-1.5">
+                <p className="font-semibold flex items-center gap-1.5">
+                  <AlertTriangle size={14} className="shrink-0" />
+                  Irreversible Cascade Deletion:
+                </p>
+                <ul className="list-disc list-inside space-y-0.5 text-[11px] text-red-700">
+                  <li>All associated vault documents (.enc files) will be destroyed</li>
+                  <li>Extracted AI analysis, OCR, and entities will be purged</li>
+                  <li>Verification issues and audit timeline entries will be cleared</li>
+                </ul>
+              </div>
+
+              <div className="pt-2 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  disabled={isDeleting}
+                  onClick={() => setCaseToDelete(null)}
+                  className="px-4 py-2 text-xs font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={isDeleting}
+                  onClick={handleDeleteCase}
+                  className="px-4 py-2 text-xs bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition flex items-center gap-1.5 disabled:opacity-50"
+                >
+                  <Trash2 size={13} />
+                  {isDeleting ? "Purging Case..." : "Confirm Permanent Deletion"}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

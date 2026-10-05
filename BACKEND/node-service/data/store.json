@@ -508,6 +508,51 @@
   },
   "auditLogs": [
     {
+      "id": "LOG-080",
+      "timestamp": "Oct 5, 2026, 7:24 PM",
+      "user": "Director Sharma",
+      "role": "ADMIN",
+      "action": "CASE_DELETED",
+      "target": "CASE-004 (Temporary Test Case for Purge Validation)",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-079",
+      "timestamp": "Oct 5, 2026, 7:24 PM",
+      "user": "Director Sharma",
+      "role": "ADMIN",
+      "action": "USER_LOGIN",
+      "target": "admin",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-078",
+      "timestamp": "Oct 5, 2026, 7:24 PM",
+      "user": "Director Sharma",
+      "role": "ADMIN",
+      "action": "CASE_CREATED",
+      "target": "CASE-004",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-077",
+      "timestamp": "Oct 5, 2026, 7:24 PM",
+      "user": "Director Sharma",
+      "role": "ADMIN",
+      "action": "USER_LOGIN",
+      "target": "admin",
+      "result": "Success"
+    },
+    {
+      "id": "LOG-076",
+      "timestamp": "Oct 5, 2026, 7:24 PM",
+      "user": "Director Sharma",
+      "role": "ADMIN",
+      "action": "USER_LOGIN",
+      "target": "admin",
+      "result": "Success"
+    },
+    {
       "id": "LOG-075",
       "timestamp": "Oct 4, 2026, 7:26 PM",
       "user": "Investigator",

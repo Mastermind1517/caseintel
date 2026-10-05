@@ -177,6 +177,10 @@ function authenticateUser(identifier, password) {
 
   if (!user) return null;
 
+  user.lastLoginAt = new Date().toISOString();
+  user.status = "Active";
+  saveUsers(users);
+
   const { passwordHash, ...userSafe } = user;
   const token = signToken({
     sub: user.id,
@@ -228,6 +232,8 @@ function registerUser({ username, email, password, name, department, role }) {
     role: finalRole,
     department: (department || 'Field Investigation').trim(),
     createdAt: new Date().toISOString(),
+    lastLoginAt: new Date().toISOString(),
+    status: "Active",
   };
 
   users.push(newUser);
@@ -325,6 +331,7 @@ const requireRole = (allowedRoles = ['ADMIN', 'INVESTIGATOR']) => {
 
 module.exports = {
   USERS,
+  loadUsers,
   signToken,
   verifyToken,
   authenticateUser,

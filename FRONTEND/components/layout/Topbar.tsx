@@ -78,7 +78,11 @@ export default function Topbar({ onOpenSidebar }: TopbarProps) {
         </span>
 
         {/* User Identity Info */}
-        <div className="flex items-center gap-2.5">
+        <Link
+          href="/profile"
+          title="View Official Profile & Credentials"
+          className="flex items-center gap-2.5 p-1 -m-1 rounded-xl hover:bg-slate-100/70 transition cursor-pointer"
+        >
           <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-xs text-slate-700 shrink-0">
             {userInitials}
           </div>
@@ -90,7 +94,7 @@ export default function Topbar({ onOpenSidebar }: TopbarProps) {
               {user.department || "Cyber Crime"}
             </p>
           </div>
-        </div>
+        </Link>
 
         {/* Quick Sign Out Action */}
         <button

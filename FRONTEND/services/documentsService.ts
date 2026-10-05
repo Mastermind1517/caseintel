@@ -90,3 +90,22 @@ export async function uploadDocument(formData: FormData) {
 export function getDocumentDownloadUrl(documentId: string): string {
   return `${API_BASE_URL}/storage/download/${documentId}`;
 }
+
+export async function deleteDocument(documentId: string) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/documents/${documentId}`, {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    });
+    if (res.ok) {
+      return await res.json();
+    }
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `Failed to delete document (Status ${res.status})`);
+  } catch (e: any) {
+    console.error("Failed to delete document via API:", e);
+    const idx = fallbackDocuments.findIndex(d => d.id === documentId);
+    if (idx !== -1) fallbackDocuments.splice(idx, 1);
+    throw e;
+  }
+}

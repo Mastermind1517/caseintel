@@ -13,6 +13,7 @@ import {
   Cpu,
   X,
   Shield,
+  User,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -55,6 +56,11 @@ const menuItems = [
     name: "Audit Logs",
     icon: ClipboardList,
     href: "/audit",
+  },
+  {
+    name: "My Profile",
+    icon: User,
+    href: "/profile",
   },
 ];
 

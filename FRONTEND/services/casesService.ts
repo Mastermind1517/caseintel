@@ -86,3 +86,23 @@ export async function createCase(data: { name: string; department?: string; prio
   fallbackCases.unshift(newCase);
   return newCase;
 }
+
+export async function deleteCase(caseId: string) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/cases/${caseId}`, {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    });
+    if (res.ok) {
+      return await res.json();
+    }
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `Failed to delete case (Status ${res.status})`);
+  } catch (e: any) {
+    console.error("Failed to delete case via API:", e);
+    // Remove from local fallback if API fails
+    const idx = fallbackCases.findIndex(c => c.id === caseId);
+    if (idx !== -1) fallbackCases.splice(idx, 1);
+    throw e;
+  }
+}
